@@ -1,7 +1,7 @@
 /** Textos en español (idioma de referencia: define las claves). */
 const es = {
   'app.title': 'Warrior Blast',
-  'app.tagline': 'Encaja. Limpia. Encadena.',
+  'app.tagline': 'No seas gaga.',
 
   'mode.classic': 'Clásico',
   'mode.classic.desc': 'Infinito, hasta que no quepa nada',
