@@ -81,8 +81,8 @@ body.pixel * { text-transform: uppercase; }
 .home { justify-content: space-between; }
 .home-top { display: flex; justify-content: space-between; align-items: center; }
 .logo { text-align: center; margin-top: 2vh; }
-.logo-blocks { display: inline-grid; grid-template-columns: repeat(3, 18px); gap: 4px; margin-bottom: 10px; animation: float 3.2s ease-in-out infinite; }
-.logo-blocks i { width: 18px; height: 18px; border-radius: 5px; }
+.logo-blocks { display: inline-grid; grid-template-columns: repeat(5, 14px); gap: 3px; margin-bottom: 10px; animation: float 3.2s ease-in-out infinite; }
+.logo-blocks i { width: 14px; height: 14px; border-radius: 4px; }
 .logo-blocks i.empty { visibility: hidden; }
 .logo-blocks i.c1 { background: var(--c1); box-shadow: 0 0 10px var(--c1); }
 .logo-blocks i.c2 { background: var(--c2); box-shadow: 0 0 10px var(--c2); }

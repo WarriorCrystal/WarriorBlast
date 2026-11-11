@@ -135,6 +135,7 @@ export class App {
   }
 
   private goHome() {
+    this.closeAllModals();
     this.game.leave();
     this.show('home');
   }
@@ -203,7 +204,15 @@ export class App {
   // =============== INICIO ===============
 
   private logo(): HTMLElement {
-    const blocks = h('div.logo-blocks', ...[1, 2, 0, 3, 4, 5, 0, 6, 7].map((c) => h(c ? `i.c${c}` : 'i.empty')));
+    // W de 5x5 hecha de bloques (0 = hueco)
+    const W = [
+      1, 0, 0, 0, 5,
+      1, 0, 0, 0, 5,
+      2, 0, 3, 0, 6,
+      2, 0, 3, 0, 6,
+      0, 7, 0, 4, 0,
+    ];
+    const blocks = h('div.logo-blocks', ...W.map((c) => h(c ? `i.c${c}` : 'i.empty')));
     return h('div.logo', blocks, h('h1.logo-word', h('span', 'WARRIOR'), h('span.blast', 'BLAST')), h('div.logo-sub', t('app.tagline')));
   }
 

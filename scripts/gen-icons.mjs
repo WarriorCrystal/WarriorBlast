@@ -55,14 +55,19 @@ const clamp = (v) => Math.max(0, Math.min(1, v));
  */
 function render(size, safe, round) {
   const out = Buffer.alloc(size * size * 4);
-  const blocks = [
-    ['#20d6ff', -1, -1],
-    ['#ff2e88', 1, -1],
-    ['#39ff7a', -1, 1],
-    ['#ffae00', 1, 1],
+  // W de 5x5 hecha de bloques (mismo patrón que el logo del menú)
+  const PAL = { 1: '#ff2e88', 2: '#ffae00', 3: '#39ff7a', 4: '#20d6ff', 5: '#8a5cff', 6: '#ff5532', 7: '#f7f34a' };
+  const W = [
+    [1, 0, 0, 0, 5],
+    [1, 0, 0, 0, 5],
+    [2, 0, 3, 0, 6],
+    [2, 0, 3, 0, 6],
+    [0, 7, 0, 4, 0],
   ];
+  const blocks = [];
+  W.forEach((row, j) => row.forEach((v, i) => v && blocks.push([PAL[v], (i - 2) * 2, (j - 2) * 2])));
   const c = size / 2;
-  const unit = (size * safe) / 4.3;
+  const unit = (size * safe) / 10.6;
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const px = x + 0.5;
