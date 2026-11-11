@@ -75,7 +75,7 @@ for (const scene of all) {
     await shot('tutorial');
   }
   if (scene === 'home') {
-    await boot(baseSave());
+    await boot(baseSave(process.env.HOME_SKIN ? { skin: process.env.HOME_SKIN, ownedSkins: ['neon', process.env.HOME_SKIN] } : {}));
     await shot('home');
     await boot({ version: 1, tutorialDone: true });
     await shot('home-reward');

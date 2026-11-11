@@ -344,6 +344,8 @@ const masita: SkinDef = {
     radius: 20,
     font: '"Segoe UI Rounded", "Arial Rounded MT Bold", "Nunito", "Segoe UI", system-ui, sans-serif',
     titleGlow: '0 2px 10px rgba(244, 144, 182, 0.55)',
+    // los bloques son casi todos blancos: la interfaz usa los ojos azules, el rosa de la pata y grises
+    swatches: [EYE_BLUE, PINK_DARK, '#8a96ad', '#7d8aa5', '#5fa7e6', '#c97fa8', '#9aa6bb'],
   },
   blockMargin: 0.08,
   flash: '#ffe3ee',

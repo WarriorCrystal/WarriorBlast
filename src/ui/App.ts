@@ -117,7 +117,7 @@ export class App {
     r.setProperty('--on-accent2', onColor(u.accent2));
     if (u.font) r.setProperty('--font', u.font);
     else r.removeProperty('--font');
-    s.blocks.slice(0, 7).forEach((c, i) => r.setProperty(`--c${i + 1}`, c));
+    (u.swatches ?? s.blocks.slice(0, 7)).forEach((c, i) => r.setProperty(`--c${i + 1}`, c));
     document.body.classList.toggle('glass', !!u.glass);
     document.body.classList.toggle('pixel', !!s.pixelated);
     document.body.dataset.skin = s.id;

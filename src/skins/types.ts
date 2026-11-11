@@ -26,6 +26,11 @@ export interface SkinUi {
   font?: string;
   /** Sombra de texto del logo/títulos. */
   titleGlow?: string;
+  /**
+   * 7 colores para la interfaz (iconos de los modos, logo de bloques). Por defecto se usan
+   * los 7 de `blocks`; úsalo cuando los bloques sean demasiado claros u oscuros para leerse sobre los paneles.
+   */
+  swatches?: [string, string, string, string, string, string, string];
 }
 
 export interface SkinParticles {

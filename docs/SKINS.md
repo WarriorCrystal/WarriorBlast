@@ -14,7 +14,7 @@ so you don't need to touch the game logic, the shop or the renderer.
 | Field | Purpose |
 |---|---|
 | `blocks` | 7 block colors + 1 "stone" color (gray/target blocks) |
-| `ui` | Menu and HUD colors (`bg`, `panel`, `text`, `accent`…), corner radius, `glass` (frosted glass), `font` (system fonts only) |
+| `ui` | Menu and HUD colors (`bg`, `panel`, `text`, `accent`…), corner radius, `glass` (frosted glass), `font` (system fonts only), `swatches` (optional: 7 UI colors for mode icons and the block logo when the block colors are too pale or dark to read) |
 | `drawBackground(ctx, w, h)` | Full-screen background (Canvas 2D) |
 | `drawBoard(ctx, size, cell)` | Board frame and empty cells |
 | `drawBlock(ctx, s, color, variant)` | One `s`×`s` block. `variant`: `normal`, `ghost` (shadow while dragging) or `stone` |
