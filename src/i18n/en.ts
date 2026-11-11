@@ -163,6 +163,11 @@ const en: Dict = {
   'settings.tutorial': 'Show tutorial',
   'settings.offline': 'Ready to play offline',
   'settings.noVibration': '(not available on this device)',
+  'settings.codes': 'Secret codes',
+  'settings.codePlaceholder': 'Enter a code',
+  'settings.codeRedeem': 'Redeem',
+  'settings.codeInvalid': 'Invalid code',
+  'settings.codeOk': 'Code redeemed! +{n} coins',
 
   'tut.1': 'Drag the piece into the gap to complete the row',
   'tut.2': 'Filling a line clears it! Now another one in a row…',

@@ -162,6 +162,11 @@ const es = {
   'settings.tutorial': 'Ver tutorial',
   'settings.offline': 'Listo para jugar sin conexión',
   'settings.noVibration': '(no disponible en este dispositivo)',
+  'settings.codes': 'Códigos secretos',
+  'settings.codePlaceholder': 'Escribe un código',
+  'settings.codeRedeem': 'Canjear',
+  'settings.codeInvalid': 'Código no válido',
+  'settings.codeOk': '¡Código canjeado! +{n} monedas',
 
   'tut.1': 'Arrastra la pieza al hueco para completar la fila',
   'tut.2': '¡Limpias una línea al llenarla! Ahora otra seguida…',

@@ -4,6 +4,7 @@ import { dateKey } from '../core/rng';
 import type { ModeId } from '../core/session';
 import { LANGS, fmt, getLang, setLang, t, type LangCode } from '../i18n';
 import { LEVELS } from '../levels/levels';
+import { lookupCode } from '../meta/codes';
 import { ACHIEVEMENTS, levelsDone, totalStars, type AchievementDef, type Progress } from '../meta/progress';
 import type { GameView } from '../render/GameView';
 import type { SaveStore } from '../save/save';
@@ -580,9 +581,45 @@ export class App {
           this.btn(t('settings.tutorial'), () => this.startGame('tutorial'), 'ghost'),
           this.btn(t('settings.reset'), () => this.confirmReset(), 'danger'),
         ),
+        this.codeBox(),
         offline,
         h('p.dim.center', t('settings.version', { v: VERSION })),
       ),
+    );
+  }
+
+  private codeBox(): HTMLElement {
+    const input = h('input.code-input', {
+      type: 'text',
+      placeholder: t('settings.codePlaceholder'),
+      autocomplete: 'off',
+      autocapitalize: 'off',
+      spellcheck: 'false',
+      maxlength: 32,
+    }) as HTMLInputElement;
+    const redeem = () => {
+      const reward = lookupCode(input.value);
+      if (!reward) {
+        haptics.vibrate([20, 40, 20]);
+        this.notice(t('settings.codeInvalid'));
+        return;
+      }
+      const before = this.d.coins;
+      if (reward.coins) this.d.coins += reward.coins;
+      this.store.save();
+      audio.play('coin');
+      haptics.vibrate([20, 30, 50]);
+      this.refreshCoins(before);
+      input.value = '';
+      this.notice(t('settings.codeOk', { n: fmt(reward.coins ?? 0) }));
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') redeem();
+    });
+    return h(
+      'div.panel.flat',
+      h('div.set-row', icon('gem'), h('span', t('settings.codes'))),
+      h('div.code-row', input, this.btn(t('settings.codeRedeem'), redeem, 'primary')),
     );
   }
 
