@@ -7,7 +7,7 @@ import type { LangCode } from '../i18n';
  * - Los campos nuevos con valor por defecto no necesitan migración: se rellenan con
  *   defaults() al cargar (mergeDefaults).
  */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const KEY = 'warriorblast.save';
 
 export type BestMode = 'classic' | 'timeattack' | 'zen';
@@ -57,8 +57,16 @@ export function defaults(): SaveData {
 /** Migraciones: MIGRATIONS[n] convierte datos de versión n a n+1. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const MIGRATIONS: Record<number, (d: any) => any> = {
-  // Ejemplo para el futuro:
-  // 1: (d) => ({ ...d, nuevoCampo: 0, version: 2 }),
+  // 1 → 2: se retiró la skin 'starsaga'; quien la tenía recibe 'testlab' a cambio.
+  1: (d) => {
+    const owned: unknown = d.ownedSkins;
+    if (Array.isArray(owned) && owned.includes('starsaga')) {
+      d.ownedSkins = owned.filter((s) => s !== 'starsaga');
+      if (!d.ownedSkins.includes('testlab')) d.ownedSkins.push('testlab');
+    }
+    if (d.skin === 'starsaga') d.skin = 'testlab';
+    return d;
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
