@@ -221,7 +221,7 @@ export class App {
     const d = this.d;
     const card = (mode: ModeId, ic: string, meta: string, cls = '') =>
       h(
-        `button.mode-card${cls ? '.' + cls : ''}`,
+        `button.mode-card.m-${mode}${cls ? '.' + cls : ''}`,
         {
           onclick: () => {
             audio.play('click');

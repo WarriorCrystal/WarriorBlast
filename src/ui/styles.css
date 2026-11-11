@@ -345,3 +345,147 @@ body[data-skin='glass'] .segment button.on { color: #3b2a7a; background: #fff; }
   .hud-score { font-size: 32px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; } }
+
+/* ===================================================================
+   Pulido visual: volumen en paneles, color por modo, estados hover.
+   Va al final para sobrescribir lo básico; pixel/glass mantienen su estilo.
+   =================================================================== */
+:root {
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 55%);
+  --lift: 0 10px 28px rgba(0, 0, 0, 0.28);
+  --hi: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --gold: #ffd23f;
+}
+
+/* paneles y tarjetas con brillo superior suave */
+.panel, .mode-card, .skin-card, .ach, .bottom-nav, .icon-btn, .coins-pill, .btn:not(.primary):not(.ghost):not(.danger):not(.buy), .goal, .tip, .chip-btn {
+  background-image: var(--sheen);
+  background-color: var(--panel);
+}
+.mode-card, .skin-card, .ach, .bottom-nav, .icon-btn, .coins-pill { box-shadow: var(--hi), var(--lift); }
+.panel { box-shadow: var(--hi), 0 24px 70px rgba(0, 0, 0, 0.5); }
+.panel.flat { box-shadow: var(--hi), var(--lift); }
+
+/* píldora de monedas */
+.coins-pill { color: var(--gold); text-shadow: 0 0 12px rgba(255, 210, 63, 0.35); }
+body[data-skin='pastel'] .coins-pill, body[data-skin='glass'] .coins-pill { color: #b07800; text-shadow: none; }
+
+/* ----- tarjetas de modo: cada modo con su color ----- */
+.mode-card { --mc: var(--accent); overflow: hidden; isolation: isolate; transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s; }
+.mode-card.m-adventure { --mc: var(--accent2); }
+.mode-card.m-timeattack { --mc: var(--c2); }
+.mode-card.m-daily { --mc: var(--c3); }
+.mode-card.m-zen { --mc: var(--c5); }
+.mode-card::before {
+  content: ''; position: absolute; z-index: -1; width: 160px; height: 160px; right: -55px; bottom: -70px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--mc) 30%, transparent), transparent 70%);
+  transition: transform 0.3s;
+}
+.mode-card::after {
+  content: ''; position: absolute; left: 18px; right: 18px; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--mc), transparent); opacity: 0.85;
+}
+.mode-card .mc-icon, .mode-card.adv .mc-icon {
+  width: 44px; height: 44px; border-radius: 14px; color: #fff;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mc) 85%, #fff), color-mix(in srgb, var(--mc) 80%, #000));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--mc) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.mc-meta {
+  top: 12px; right: 10px; padding: 3px 9px; border-radius: 99px;
+  background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-dim);
+}
+.mode-card.new .mc-meta { color: #fff; background: var(--accent2); box-shadow: 0 0 12px color-mix(in srgb, var(--accent2) 55%, transparent); }
+.mode-card.done .mc-meta { color: var(--good); background: color-mix(in srgb, var(--good) 15%, transparent); }
+.mc-title { font-size: 17px; }
+
+/* ----- botón jugar: destello que lo recorre ----- */
+.play-btn { position: relative; overflow: hidden; isolation: isolate; }
+.play-btn::after {
+  content: ''; position: absolute; z-index: -1; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+  transform: translateX(-100%); animation: sheen 3.6s ease-in-out 1s infinite;
+}
+@keyframes sheen { 0%, 55% { transform: translateX(-100%); } 85%, 100% { transform: translateX(100%); } }
+.play-ico { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35); }
+
+/* ----- navegación inferior ----- */
+.nav-btn .ico {
+  width: 40px; height: 40px; padding: 8px; border-radius: 13px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent); transition: transform 0.15s, background 0.2s;
+}
+.nav-btn:active { background: none; }
+.nav-btn:active .ico { transform: scale(0.88); }
+.nav-btn em { top: 0; right: calc(50% - 40px); font-weight: 800; box-shadow: 0 0 10px color-mix(in srgb, var(--accent2) 60%, transparent); }
+
+/* ----- botones ----- */
+.btn { transition: transform 0.12s, filter 0.15s, box-shadow 0.2s, border-color 0.2s; }
+.btn.primary { box-shadow: 0 8px 24px color-mix(in srgb, var(--accent2) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+.btn.buy {
+  color: #3b1d00; border-color: transparent;
+  background: linear-gradient(135deg, #ffe066, #ffb400); box-shadow: 0 6px 18px rgba(255, 180, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.btn.buy.disabled { filter: grayscale(0.7); opacity: 0.55; box-shadow: none; }
+.btn.equipped { background: color-mix(in srgb, var(--good) 12%, transparent); }
+.btn.danger { background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.icon-btn { transition: transform 0.12s, border-color 0.2s; }
+
+@media (hover: hover) {
+  .skin-card:hover, .icon-btn:hover, .btn:not(.primary):not(.buy):hover, .chip-btn:hover { border-color: color-mix(in srgb, var(--accent) 70%, transparent); }
+  .mode-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--mc) 70%, transparent); }
+  .mode-card:hover::before { transform: scale(1.25); }
+  .play-btn:hover, .btn.primary:hover, .btn.buy:hover, .map-node:not(.locked):hover { filter: brightness(1.08); }
+  .nav-btn:hover .ico { background: color-mix(in srgb, var(--accent) 26%, transparent); }
+}
+
+/* ----- tienda ----- */
+.skin-card { padding: 10px 10px 12px; }
+.skin-card > :last-child { margin-top: auto; }
+.skin-preview { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); }
+.skin-info { padding: 2px 2px 0; }
+.skin-info small { display: block; line-height: 1.3; margin-top: 2px; }
+.skin-card.equipped { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 35%, transparent), 0 0 30px color-mix(in srgb, var(--good) 18%, transparent), var(--lift); }
+
+/* ----- logros ----- */
+.ach-body b { margin-bottom: 1px; }
+.ach:not(.got) .ach-ico { border: 1.5px dashed color-mix(in srgb, var(--text) 20%, transparent); background: transparent; }
+.ach.got { border-color: color-mix(in srgb, var(--gold) 55%, transparent); box-shadow: var(--hi), 0 0 24px rgba(255, 210, 63, 0.12), var(--lift); }
+.ach.got .ach-ico { box-shadow: 0 4px 14px rgba(255, 170, 0, 0.4); }
+.progress { height: 14px; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3); }
+.progress i { box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent); }
+.progress span { line-height: 14px; }
+.ach-reward { padding: 4px 10px 4px 6px; border-radius: 99px; background: rgba(255, 210, 63, 0.1); }
+
+/* ----- ajustes ----- */
+.set-row { padding: 10px 0; }
+.set-row > .ico {
+  width: 40px; height: 40px; padding: 9px; border-radius: 12px; font-size: inherit;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.code-input { transition: border-color 0.2s, box-shadow 0.2s; }
+.code-input:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent); }
+.segment button { transition: background 0.2s, color 0.2s; }
+.segment button.on { box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent); }
+.switch input:checked + i { box-shadow: 0 0 14px color-mix(in srgb, var(--good) 45%, transparent); }
+
+/* ----- modales ----- */
+.modal-back { background: radial-gradient(ellipse at center, rgba(5, 3, 15, 0.5), rgba(5, 3, 15, 0.82)); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.modal > .panel { border-color: color-mix(in srgb, var(--accent) 35%, var(--panel-border)); }
+.modal > .panel::before {
+  content: ''; position: absolute; left: 22%; right: 22%; top: -1px; height: 3px; border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 0 16px var(--accent);
+}
+.goal-list li { border: 1px solid color-mix(in srgb, var(--text) 8%, transparent); }
+.goal-list .ico { width: 34px; height: 34px; padding: 7px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.over-stats > div { border: 1px solid color-mix(in srgb, var(--text) 8%, transparent); }
+.over-stats b { display: block; margin-top: 2px; }
+
+/* ----- mapa de aventura ----- */
+.map-node:not(.locked) { border: 3px solid rgba(255, 255, 255, 0.35); }
+.map-node.current { border-color: #fff; }
+
+/* las skins con estilo propio no llevan brillos extra */
+body.pixel .mode-card::before, body.pixel .mode-card::after, body.pixel .play-btn::after, body.pixel .modal > .panel::before { display: none; }
+body.pixel { --sheen: none; }
+body.pixel .mode-card .mc-icon, body.pixel .nav-btn .ico, body.pixel .set-row > .ico, body.pixel .goal-list .ico { border-radius: 0; }
+body[data-skin='pastel'] { --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 55%); --lift: 0 8px 22px rgba(150, 110, 100, 0.16); }
+body[data-skin='pastel'] .modal-back, body.glass .modal-back { background: rgba(60, 40, 90, 0.3); }
