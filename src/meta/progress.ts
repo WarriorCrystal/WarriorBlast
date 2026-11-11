@@ -88,8 +88,21 @@ export class Progress {
     if (mode === 'zen') s.zenMoves++;
   }
 
+  /**
+   * Tras cada jugada: guarda el récord en vivo (Clásico/Zen/Contrarreloj no necesitan terminar
+   * para contar) y desbloquea los logros en el momento en que se cumplen.
+   */
+  liveUpdate(session: GameSession): AchievementDef[] {
+    const m = session.mode as BestMode;
+    if (m in this.d.best) this.d.best[m] = Math.max(this.d.best[m], session.score);
+    const achievements = this.checkAchievements();
+    this.store.save();
+    return achievements;
+  }
+
   /** Fin de partida (no Aventura). Devuelve monedas ganadas y logros. */
-  finishGame(session: GameSession): GameReward {
+  /** bestBefore: récord al empezar la partida (el récord se actualiza en vivo durante la jugada). */
+  finishGame(session: GameSession, bestBefore?: number): GameReward {
     const d = this.d;
     d.stats.games++;
     let coins = coinsForScore(session.score, session.bestCombo);
@@ -114,7 +127,7 @@ export class Progress {
     } else if (session.mode !== 'tutorial') {
       const m = session.mode as BestMode;
       if (m in d.best) {
-        newBest = session.score > d.best[m] && session.score > 0;
+        newBest = session.score > (bestBefore ?? d.best[m]) && session.score > 0;
         d.best[m] = Math.max(d.best[m], session.score);
         best = d.best[m];
       }

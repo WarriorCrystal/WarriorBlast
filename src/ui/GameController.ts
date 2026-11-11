@@ -241,6 +241,11 @@ export class GameController {
     const res = s.place(slot, x, y);
     if (!res) return null;
     this.progress.recordMove(res.lines, res.combo, res.perfect, s.mode);
+    // récord y logros al instante (sin esperar al final de la partida)
+    if (s.mode !== 'tutorial') {
+      const ach = this.progress.liveUpdate(s);
+      if (ach.length) this.hooks.onAchievements(ach);
+    }
     this.refreshHud(res);
     // aviso de nuevo récord en mitad de la partida
     if (!this.bannerShown && this.bestAtStart > 0 && s.score > this.bestAtStart && (s.mode === 'classic' || s.mode === 'timeattack')) {
@@ -285,7 +290,7 @@ export class GameController {
     else await this.view.animateGameOver();
     if (this.session !== s) return;
     const reward =
-      s.mode === 'adventure' ? this.progress.finishLevel(s, reason === 'win', res?.stars ?? 0) : this.progress.finishGame(s);
+      s.mode === 'adventure' ? this.progress.finishLevel(s, reason === 'win', res?.stars ?? 0) : this.progress.finishGame(s, this.bestAtStart);
     this.hooks.onEnd({ mode: s.mode, reason, session: s, reward, level: s.level });
     if (reward.achievements.length) this.hooks.onAchievements(reward.achievements);
   }
