@@ -17,6 +17,23 @@ type ScreenName = 'home' | 'adventure' | 'shop' | 'achievements' | 'stats' | 'se
 
 const VERSION = __APP_VERSION__;
 
+/** Luminancia relativa aproximada (0..1) de un color #rrggbb, #rgb o rgb(a). */
+function luminance(color: string): number {
+  let rgb: number[] = [];
+  const m = color.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (m) {
+    const hex = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1];
+    rgb = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  } else {
+    rgb = (color.match(/[\d.]+/g) ?? ['0', '0', '0']).slice(0, 3).map(Number);
+  }
+  const [r, g, b] = rgb.map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
 export class App {
   private screenHost = h('div.screens');
   private modalHost = h('div.modals');
@@ -79,6 +96,15 @@ export class App {
     r.setProperty('--danger', u.danger);
     r.setProperty('--radius', `${u.radius}px`);
     r.setProperty('--title-glow', u.titleGlow ?? 'none');
+    // texto legible sobre los colores de acento (botón principal, nodos del mapa, insignias)
+    const ink = luminance(u.bg) < luminance(u.text) ? u.bg : u.text;
+    const onColor = (c: string) => {
+      const l = luminance(c);
+      const ratio = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      return ratio(l, 1) >= ratio(l, luminance(ink)) ? '#ffffff' : ink;
+    };
+    r.setProperty('--on-accent', onColor(u.accent));
+    r.setProperty('--on-accent2', onColor(u.accent2));
     if (u.font) r.setProperty('--font', u.font);
     else r.removeProperty('--font');
     s.blocks.slice(0, 7).forEach((c, i) => r.setProperty(`--c${i + 1}`, c));
@@ -219,7 +245,7 @@ export class App {
 
   private renderHome(): HTMLElement {
     const d = this.d;
-    const card = (mode: ModeId, ic: string, meta: string, cls = '') =>
+    const card = (mode: ModeId, ic: string, metaIc: string, meta: string, cls = '') =>
       h(
         `button.mode-card.m-${mode}${cls ? '.' + cls : ''}`,
         {
@@ -230,9 +256,8 @@ export class App {
             else this.startGame(mode);
           },
         },
-        h('div.mc-icon', icon(ic)),
+        h('div.mc-head', h('div.mc-icon', icon(ic)), h('div.mc-meta', icon(metaIc), h('span', meta))),
         h('div.mc-text', h('div.mc-title', t(`mode.${mode}` as never)), h('div.mc-desc', t(`mode.${mode}.desc` as never))),
-        h('div.mc-meta', meta),
       );
     const dailyPlayed = d.daily.lastDate === dateKey();
     const stars = totalStars(d);
@@ -245,15 +270,20 @@ export class App {
         h(
           'button.play-btn',
           { onclick: () => (audio.play('click'), this.startGame('classic')) },
+          h(
+            'span.play-txt',
+            h('small', t('menu.play')),
+            h('b', t('mode.classic')),
+            h('span.play-best', icon('trophy'), t('menu.best', { n: fmt(d.best.classic) })),
+          ),
           h('span.play-ico', icon('play')),
-          h('span.play-txt', h('b', t('mode.classic')), h('small', t('menu.best', { n: fmt(d.best.classic) }))),
         ),
         h(
           'div.mode-grid',
-          card('adventure', 'map', `★ ${stars}/${LEVELS.length * 3}`, 'adv'),
-          card('timeattack', 'clock', fmt(d.best.timeattack)),
-          card('daily', 'calendar', dailyPlayed ? `✓ ${fmt(d.daily.todayScore)}` : `🔥 ${d.daily.streak}`, dailyPlayed ? 'done' : 'new'),
-          card('zen', 'leaf', fmt(d.best.zen)),
+          card('adventure', 'map', 'star', `${stars}/${LEVELS.length * 3}`, 'adv'),
+          card('timeattack', 'clock', 'trophy', fmt(d.best.timeattack)),
+          card('daily', 'calendar', dailyPlayed ? 'check' : 'bolt', dailyPlayed ? fmt(d.daily.todayScore) : String(d.daily.streak), dailyPlayed ? 'done' : 'new'),
+          card('zen', 'leaf', 'trophy', fmt(d.best.zen)),
         ),
       ),
       h(

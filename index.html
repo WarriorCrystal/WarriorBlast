@@ -17,11 +17,11 @@
       html, body { margin: 0; height: 100%; background: #07051a; overflow: hidden; }
       #splash { position: fixed; inset: 0; display: grid; place-items: center; background: #07051a; z-index: 100; transition: opacity .5s; }
       #splash.gone { opacity: 0; pointer-events: none; }
-      #splash .sq { width: 54px; height: 54px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; animation: spin 1.2s ease-in-out infinite; }
-      #splash .sq i { border-radius: 6px; background: #20d6ff; box-shadow: 0 0 14px #20d6ff; }
-      #splash .sq i:nth-child(2) { background: #ff2e88; box-shadow: 0 0 14px #ff2e88; }
-      #splash .sq i:nth-child(3) { background: #39ff7a; box-shadow: 0 0 14px #39ff7a; }
-      #splash .sq i:nth-child(4) { background: #ffae00; box-shadow: 0 0 14px #ffae00; }
+      #splash .sq { width: 54px; height: 54px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; animation: spin 1.4s cubic-bezier(.6,0,.3,1) infinite; }
+      #splash .sq i { border-radius: 5px; background: #20d6ff; }
+      #splash .sq i:nth-child(2) { background: #ff2e88; }
+      #splash .sq i:nth-child(3) { background: #39ff7a; }
+      #splash .sq i:nth-child(4) { background: #ffae00; }
       @keyframes spin { 50% { transform: rotate(90deg) scale(.85); } 100% { transform: rotate(180deg); } }
     </style>
   </head>
