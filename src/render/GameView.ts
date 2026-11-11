@@ -721,6 +721,11 @@ export class GameView {
     }
   }
 
+  /** Colores de interfaz de la skin activa. */
+  get skinUi() {
+    return this.skin.ui;
+  }
+
   /** Texto emergente (elogios, puntos, avisos). */
   popText(str: string, x: number, y: number, size: number, color: string, o: { big?: boolean; rise?: number; dur?: number; delay?: number } = {}) {
     const font = this.skin.ui.font ?? SYSTEM_FONT;
@@ -798,6 +803,57 @@ export class GameView {
     }
     this.boardLayer.alpha = 0;
     this.tweens.to(this.boardLayer, { alpha: 1 }, 250);
+  }
+
+  // ======================= Versus =======================
+
+  /** Bloques de piedra que caen sobre el tablero (modificador del rival). */
+  dropJunk(cells: number[]) {
+    const b = this.session?.board;
+    if (!b) return;
+    audio.play('drop');
+    haptics.vibrate([25, 30, 25]);
+    cells.forEach((k, i) => {
+      const s = this.blocks[k];
+      this.tweens.kill(s);
+      s.texture = this.cellTex(b.cells[k]);
+      s.visible = true;
+      s.alpha = 0;
+      s.scale.set(2.2);
+      this.tweens.to(s, { scale: 1, alpha: 1 }, 320, {
+        delay: i * 90,
+        ease: ease.outBack,
+        onComplete: () => {
+          this.kick(this.L.cell * 0.08, 160);
+          const c = this.cellCenter(k % SIZE, Math.floor(k / SIZE));
+          this.particles.burst(c.x, c.y, 4, this.tex.particle[STONE_COLOR] ?? this.tex.particle[1], this.skin.particles, this.L.cell, 0.9);
+        },
+      });
+    });
+    this.shake(5, 260);
+    this.tweens.delay(cells.length * 90 + 340, () => this.updateTrayFit());
+  }
+
+  /** Retira celdas del tablero con una pequeña explosión (modificador Limpieza). */
+  vanishCells(cells: number[]) {
+    cells.forEach((k, i) => {
+      const s = this.blocks[k];
+      const c = this.cellCenter(k % SIZE, Math.floor(k / SIZE));
+      this.tweens.delay(i * 70, () => {
+        this.particles.burst(c.x, c.y, 5, this.tex.particle[1 + (i % 7)], this.skin.particles, this.L.cell, 1.1);
+        this.tweens.to(s, { scale: 0, alpha: 0 }, 220, { ease: ease.inBack, onComplete: () => (s.visible = false) });
+      });
+    });
+    audio.play('clear', { lines: 1, combo: 1 });
+    this.tweens.delay(cells.length * 70 + 240, () => this.updateTrayFit());
+  }
+
+  /** La bandeja cambia (modificador Piezas pesadas). */
+  swapTray() {
+    this.cancelDrag();
+    this.syncTray(true);
+    audio.play('refresh');
+    haptics.vibrate(30);
   }
 
   /** Animación de fin: el tablero se apaga fila a fila. Resuelve al terminar. */

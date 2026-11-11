@@ -1,5 +1,6 @@
 import { COINS_PER_STAR } from '../core/level';
 import { dateKey, daysBetween } from '../core/rng';
+import { WIN_BONUS, type Difficulty, type Outcome } from '../core/versus';
 import { coinsForScore } from '../core/scoring';
 import type { GameSession, ModeId } from '../core/session';
 import { LEVELS } from '../levels/levels';
@@ -10,6 +11,13 @@ export interface RunResult {
   mode: ModeId;
   score: number;
   bestCombo: number;
+}
+
+/** Datos extra de una partida Versus. */
+export interface VersusResult {
+  difficulty: Difficulty;
+  outcome: Outcome;
+  mult: number;
 }
 
 /* ================= Logros ================= */
@@ -38,8 +46,9 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'levels_10', target: 10, reward: 100, value: levelsDone },
   { id: 'levels_30', target: 30, reward: 300, value: levelsDone },
   { id: 'stars_90', target: 90, reward: 300, value: totalStars },
-  { id: 'daily_first', target: 1, reward: 30, value: (d) => Object.keys(d.daily.history).length },
-  { id: 'daily_7', target: 7, reward: 150, value: (d) => d.daily.bestStreak },
+  { id: 'versus_win', target: 1, reward: 30, value: (d) => d.versus.wins.easy + d.versus.wins.medium + d.versus.wins.hard },
+  { id: 'versus_hard', target: 1, reward: 150, value: (d) => d.versus.wins.hard },
+  { id: 'versus_streak', target: 5, reward: 100, value: (d) => d.versus.bestStreak },
   { id: 'time_5k', target: 5000, reward: 100, value: (d) => d.best.timeattack },
   { id: 'zen_200', target: 200, reward: 50, value: (d) => d.stats.zenMoves },
   { id: 'skin_1', target: 1, reward: 50, value: (d) => d.stats.skinsBought },
@@ -110,28 +119,23 @@ export class Progress {
 
   /** Fin de partida (no Aventura). Devuelve monedas ganadas y logros. */
   /** bestBefore: récord al empezar la partida (el récord se actualiza en vivo durante la jugada). */
-  finishGame(session: RunResult, bestBefore?: number): GameReward {
+  finishGame(session: RunResult, bestBefore?: number, vs?: VersusResult): GameReward {
     const d = this.d;
     d.stats.games++;
     let coins = coinsForScore(session.score, session.bestCombo);
     let newBest = false;
     let best = 0;
-    if (session.mode === 'daily') {
-      const today = dateKey();
-      const prev = d.daily.lastDate;
-      if (prev !== today) {
-        d.daily.streak = prev && daysBetween(prev, today) === 1 ? d.daily.streak + 1 : 1;
-        d.daily.bestStreak = Math.max(d.daily.bestStreak, d.daily.streak);
-        d.daily.todayScore = 0;
-        coins += 15; // bonus por completar el desafío del día (una vez al día)
-      }
-      d.daily.lastDate = today;
-      newBest = session.score > d.daily.todayScore;
-      d.daily.todayScore = Math.max(d.daily.todayScore, session.score);
-      d.daily.history[today] = d.daily.todayScore;
-      const keys = Object.keys(d.daily.history).sort();
-      while (keys.length > 60) delete d.daily.history[keys.shift()!];
-      best = d.daily.todayScore;
+    if (vs) {
+      const v = d.versus;
+      v.played++;
+      if (vs.outcome === 'win') {
+        v.wins[vs.difficulty]++;
+        v.streak++;
+        v.bestStreak = Math.max(v.bestStreak, v.streak);
+        coins += WIN_BONUS;
+      } else if (vs.outcome === 'lose') v.streak = 0;
+      coins = Math.floor(coins * vs.mult);
+      best = v.wins[vs.difficulty];
     } else if (session.mode !== 'tutorial') {
       const m = session.mode as BestMode;
       if (m in d.best) {

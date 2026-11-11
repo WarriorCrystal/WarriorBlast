@@ -35,7 +35,8 @@ src/
   ui/          Menus and HUD in DOM/CSS + game controller
 ```
 
-- **Modes:** Classic, Time Attack (2 min, clearing lines adds time), Daily Challenge (date-based seed, 20 rounds),
+- **Modes:** Classic, Time Attack (2 min, clearing lines adds time), Versus (vs. a bot on Easy/Medium/Hard with x1/x1.5/x2
+  coins; clearing lines charges a meter that fires modifiers: junk blocks, heavy pieces, shield, cleanse; 3 minutes),
   Zen (no game over: new pieces arrive if you get stuck; unlimited undo), Adventure (30 levels, stars),
   Cascade (falling four-block pieces in a 10×20 well: 7-bag, wall kicks, hold, ghost, 5-piece preview, levels speed up
   every 10 lines; keyboard, on-screen buttons or gestures: tap = rotate, drag = move, swipe down = drop).

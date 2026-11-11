@@ -1,8 +1,9 @@
 import { audio, haptics } from '../audio/audio';
 import type { Goal, LevelDef } from '../core/level';
-import { dateKey } from '../core/rng';
 import type { ModeId } from '../core/session';
+import { DIFFICULTIES, DIFFICULTY_IDS, type Difficulty } from '../core/versus';
 import { LANGS, fmt, getLang, setLang, t, type LangCode } from '../i18n';
+import { randomTagline } from '../i18n/taglines';
 import { LEVELS } from '../levels/levels';
 import { lookupCode } from '../meta/codes';
 import { ACHIEVEMENTS, levelsDone, totalStars, type AchievementDef, type Progress } from '../meta/progress';
@@ -198,7 +199,7 @@ export class App {
     if (this.current !== 'game') this.show(this.current);
   }
 
-  startGame(mode: ModeId, levelId?: number) {
+  startGame(mode: ModeId, levelId?: number, difficulty?: Difficulty) {
     this.closeAllModals();
     if (this.active !== (mode === 'cascade' ? this.cascade : this.game)) this.active.leave();
     if (mode === 'cascade') {
@@ -206,7 +207,7 @@ export class App {
       this.cascade.start();
     } else {
       this.active = this.game;
-      this.game.start(mode, levelId);
+      this.game.start(mode, levelId, undefined, difficulty);
     }
     this.show('game', this.active.root);
     requestAnimationFrame(() => this.active.updateInsets());
@@ -257,7 +258,9 @@ export class App {
       0, 7, 0, 4, 0,
     ];
     const blocks = h('div.logo-blocks', ...W.map((c) => h(c ? `i.c${c}` : 'i.empty')));
-    return h('div.logo', blocks, h('h1.logo-word', h('span', 'WARRIOR'), h('span.blast', 'BLAST')), h('div.logo-sub', t('app.tagline')));
+    // frase aleatoria bajo el título; al tocarla sale otra
+    const sub = h('button.logo-sub', { onclick: () => (sub.textContent = randomTagline()) }, randomTagline());
+    return h('div.logo', blocks, h('h1.logo-word', h('span', 'WARRIOR'), h('span.blast', 'BLAST')), sub);
   }
 
   private renderHome(): HTMLElement {
@@ -270,13 +273,14 @@ export class App {
             audio.play('click');
             haptics.vibrate(6);
             if (mode === 'adventure') this.show('adventure');
+            else if (mode === 'versus') this.showVersusSetup();
             else this.startGame(mode);
           },
         },
         h('div.mc-head', h('div.mc-icon', icon(ic)), h('div.mc-meta', icon(metaIc), h('span', meta))),
         h('div.mc-text', h('div.mc-title', t(`mode.${mode}` as never)), h('div.mc-desc', t(`mode.${mode}.desc` as never))),
       );
-    const dailyPlayed = d.daily.lastDate === dateKey();
+    const vsWins = d.versus.wins.easy + d.versus.wins.medium + d.versus.wins.hard;
     const stars = totalStars(d);
     return h(
       'div.screen.menu.home',
@@ -299,7 +303,7 @@ export class App {
           'div.mode-grid',
           card('adventure', 'map', 'star', `${stars}/${LEVELS.length * 3}`, 'adv'),
           card('timeattack', 'clock', 'trophy', fmt(d.best.timeattack)),
-          card('daily', 'calendar', dailyPlayed ? 'check' : 'bolt', dailyPlayed ? fmt(d.daily.todayScore) : String(d.daily.streak), dailyPlayed ? 'done' : 'new'),
+          card('versus', 'swords', 'trophy', fmt(vsWins)),
           card('zen', 'leaf', 'trophy', fmt(d.best.zen)),
           card('cascade', 'cascade', 'trophy', fmt(d.best.cascade), 'wide'),
         ),
@@ -307,7 +311,7 @@ export class App {
       h(
         'nav.bottom-nav',
         this.navBtn('bag', t('menu.shop'), () => this.show('shop')),
-        this.navBtn('trophy', t('menu.achievements'), () => this.show('achievements'), Object.keys(d.achievements).length + '/' + ACHIEVEMENTS.length),
+        this.navBtn('trophy', t('menu.achievements'), () => this.show('achievements'), ACHIEVEMENTS.filter((a) => d.achievements[a.id]).length + '/' + ACHIEVEMENTS.length),
         this.navBtn('chart', t('menu.stats'), () => this.show('stats')),
       ),
     );
@@ -553,7 +557,13 @@ export class App {
           row(t('mode.timeattack'), d.best.timeattack),
           row(t('mode.zen'), d.best.zen),
           row(t('mode.cascade'), d.best.cascade),
-          row(t('mode.daily'), d.daily.todayScore),
+        ),
+        h(
+          'div.panel.flat',
+          h('h3', t('stats.versus')),
+          ...DIFFICULTY_IDS.map((id) => row(t(`vs.${id}` as never), t('vs.wins', { n: fmt(d.versus.wins[id]) }))),
+          row(t('stats.versusPlayed'), d.versus.played),
+          row(t('stats.versusStreak'), d.versus.bestStreak),
         ),
         h(
           'div.panel.flat',
@@ -564,7 +574,6 @@ export class App {
           row(t('stats.perfect'), d.stats.perfect),
           row(t('stats.levels'), `${levelsDone(d)}/${LEVELS.length}`),
           row(t('stats.stars'), `${totalStars(d)}/${LEVELS.length * 3}`),
-          row(t('stats.dailyStreak'), d.daily.bestStreak),
           row(t('stats.coinsEarned'), d.stats.coinsEarned),
         ),
       ),
@@ -765,6 +774,7 @@ export class App {
 
   private showEnd(info: EndInfo) {
     if (info.mode === 'adventure') return this.showLevelEnd(info);
+    if (info.versus) return this.showVersusEnd(info);
     const s = info.session;
     const r = info.reward;
     const title =
@@ -784,7 +794,6 @@ export class App {
           : h('div', h('small', t('over.bestCombo')), h('b', `x${s.bestCombo}`)),
       ),
       r.coins > 0 ? h('div.coins-won', coinIcon(), t('over.coins', { n: r.coins })) : null,
-      info.mode === 'daily' ? h('p.dim.center', t('over.dailyDone')) : null,
       h(
         'div.btn-row',
         this.btn(h('span', icon('home'), t('over.home')), () => this.goHome(), 'ghost'),
@@ -834,6 +843,83 @@ export class App {
           }, 350 + i * 330);
       });
     }
+  }
+
+  // =============== VERSUS ===============
+
+  /** Elegir dificultad del bot antes de empezar. */
+  private showVersusSetup() {
+    let pick: Difficulty = this.d.versus.difficulty;
+    const opts = DIFFICULTY_IDS.map((id) => {
+      const def = DIFFICULTIES[id];
+      const el = h(
+        `button.diff-opt.d-${id}${id === pick ? '.on' : ''}`,
+        {
+          onclick: () => {
+            pick = id;
+            audio.play('click');
+            haptics.vibrate(6);
+            opts.forEach((o) => o.classList.toggle('on', o === el));
+          },
+          'aria-pressed': String(id === pick),
+        },
+        h('div.diff-text', h('b', t(`vs.${id}` as never)), h('small', t(`vs.${id}.desc` as never))),
+        h('div.diff-side', h('span.diff-mult', coinIcon(), `x${def.mult}`), h('small', t('vs.wins', { n: fmt(this.d.versus.wins[id]) }))),
+      );
+      return el;
+    });
+    const close = this.modal(
+      h(
+        'div.panel.versus-setup',
+        h('h2', t('vs.pick')),
+        h('div.diff-list', ...opts),
+        h('p.dim.vs-rules', t('vs.rules')),
+        h(
+          'div.btn-row',
+          this.btn(t('menu.back'), () => close(), 'ghost'),
+          this.btn(h('span', icon('swords'), t('vs.start')), () => {
+            this.d.versus.difficulty = pick;
+            this.store.save();
+            this.startGame('versus', undefined, pick);
+          }, 'primary'),
+        ),
+      ),
+      true,
+    );
+  }
+
+  private showVersusEnd(info: EndInfo) {
+    const v = info.versus!;
+    const s = info.session;
+    const r = info.reward;
+    const title = v.outcome === 'win' ? t('over.win') : v.outcome === 'lose' ? t('over.lose') : t('over.draw');
+    const scoreEl = h('div.final-score', '0');
+    const panel = h(
+      `div.panel.gameover.vs-end.${v.outcome}`,
+      h('h2', title),
+      h('div.dim.upper', `${t('mode.versus')} · ${t(`vs.${v.difficulty}` as never)}`),
+      h(
+        'div.vs-scores',
+        h('div', h('small', t('vs.you')), scoreEl),
+        h('span.vs-vs', 'VS'),
+        h('div', h('small', t('vs.bot')), h('div.final-score.bot', fmt(v.botScore))),
+      ),
+      h(
+        'div.over-stats',
+        h('div', h('small', t('over.lines')), h('b', fmt(s.lines))),
+        h('div', h('small', t('over.bestCombo')), h('b', `x${s.bestCombo}`)),
+      ),
+      r.coins > 0 ? h('div.coins-won', coinIcon(), t('over.coins', { n: r.coins }), h('span.mult-tag', `x${v.mult}`)) : null,
+      h(
+        'div.btn-row',
+        this.btn(h('span', icon('home'), t('over.home')), () => this.goHome(), 'ghost'),
+        this.btn(h('span', icon('restart'), t('over.again')), () => this.startGame('versus', undefined, v.difficulty), 'primary'),
+      ),
+    );
+    this.modal(panel, false);
+    countUp(scoreEl, 0, s.score, 900, fmt);
+    if (v.outcome === 'win') setTimeout(() => audio.play('unlock'), 500);
+    if (r.coins > 0) setTimeout(() => audio.play('coin'), 950);
   }
 
   // =============== recompensas / toasts ===============

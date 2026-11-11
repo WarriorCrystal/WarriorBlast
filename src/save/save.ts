@@ -1,4 +1,5 @@
 import type { LangCode } from '../i18n';
+import type { Difficulty } from '../core/versus';
 
 /**
  * Guardado local versionado.
@@ -7,7 +8,7 @@ import type { LangCode } from '../i18n';
  * - Los campos nuevos con valor por defecto no necesitan migración: se rellenan con
  *   defaults() al cargar (mergeDefaults).
  */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 const KEY = 'warriorblast.save';
 
 export type BestMode = 'classic' | 'timeattack' | 'zen' | 'cascade';
@@ -20,7 +21,14 @@ export interface SaveData {
   settings: { music: boolean; sfx: boolean; vibration: boolean; lang: LangCode | null };
   tutorialDone: boolean;
   best: Record<BestMode, number>;
-  daily: { lastDate: string | null; todayScore: number; streak: number; bestStreak: number; history: Record<string, number> };
+  versus: {
+    /** Última dificultad elegida (se preselecciona al volver). */
+    difficulty: Difficulty;
+    played: number;
+    wins: Record<Difficulty, number>;
+    streak: number;
+    bestStreak: number;
+  };
   login: { lastDate: string | null; streak: number };
   levels: Record<string, { stars: number; best: number }>;
   stats: {
@@ -46,7 +54,7 @@ export function defaults(): SaveData {
     settings: { music: true, sfx: true, vibration: true, lang: null },
     tutorialDone: false,
     best: { classic: 0, timeattack: 0, zen: 0, cascade: 0 },
-    daily: { lastDate: null, todayScore: 0, streak: 0, bestStreak: 0, history: {} },
+    versus: { difficulty: 'medium', played: 0, wins: { easy: 0, medium: 0, hard: 0 }, streak: 0, bestStreak: 0 },
     login: { lastDate: null, streak: 0 },
     levels: {},
     stats: { games: 0, lines: 0, pieces: 0, bestCombo: 0, perfect: 0, coinsEarned: 0, maxLinesAtOnce: 0, zenMoves: 0, skinsBought: 0 },
@@ -65,6 +73,11 @@ export const MIGRATIONS: Record<number, (d: any) => any> = {
       if (!d.ownedSkins.includes('testlab')) d.ownedSkins.push('testlab');
     }
     if (d.skin === 'starsaga') d.skin = 'testlab';
+    return d;
+  },
+  // 2 → 3: el Desafío diario se sustituyó por el modo Versus.
+  2: (d) => {
+    delete d.daily;
     return d;
   },
 };

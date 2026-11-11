@@ -4,7 +4,7 @@ import { anyShapeFits, dealPure, dealSet, solvable } from '../src/core/generator
 import { SHAPES, shapeFrom } from '../src/core/pieces';
 import { Rng, dailySeed, dateKey, daysBetween } from '../src/core/rng';
 import { COMBO_GRACE, advanceCombo, clearPoints, linesBase, praiseLevel } from '../src/core/scoring';
-import { DAILY_ROUNDS, GameSession, TIME_ATTACK_MS } from '../src/core/session';
+import { GameSession, TIME_ATTACK_MS } from '../src/core/session';
 import { LEVELS } from '../src/levels/levels';
 
 const row = (s: string) => s;
@@ -176,19 +176,6 @@ describe('sesión', () => {
     const r = s.place(0, 7, 0)!;
     expect(r.timeBonusMs).toBeGreaterThan(0);
     expect(s.update(TIME_ATTACK_MS * 10)).toBe('timeup');
-  });
-
-  it('Diario: misma fecha => misma secuencia de piezas; termina tras N rondas', () => {
-    const d = new Date(2026, 10, 11);
-    const a = new GameSession({ mode: 'daily', seed: dailySeed(d) });
-    const b = new GameSession({ mode: 'daily', seed: dailySeed(d) });
-    expect(a.tray.map((p) => p!.shape.id)).toEqual(b.tray.map((p) => p!.shape.id));
-    const c = new GameSession({ mode: 'daily', seed: dailySeed(new Date(2026, 10, 12)) });
-    const seqA = [0, 1, 2, 3, 4].flatMap(() => dealPure(new Rng(dailySeed(d)), 0.3).map((p) => p.shape.id));
-    const seqC = [0, 1, 2, 3, 4].flatMap(() => dealPure(new Rng(dailySeed(new Date(2026, 10, 12))), 0.3).map((p) => p.shape.id));
-    expect(seqA).not.toEqual(seqC);
-    expect(c.rounds).toBe(1);
-    expect(DAILY_ROUNDS).toBeGreaterThan(5);
   });
 
   it('Aventura: gana al cumplir objetivos y da estrellas', () => {

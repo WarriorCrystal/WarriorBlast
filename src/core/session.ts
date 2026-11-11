@@ -1,18 +1,17 @@
 import { Board, MARK_GEM, MARK_TARGET, type ClearedCell } from './board';
-import { classicDifficulty, dealPure, dealSet } from './generator';
+import { classicDifficulty, dealSet } from './generator';
 import { MOVE_BONUS, starsFor, type Goal, type LevelDef } from './level';
 import { shapeFrom, type Piece } from './pieces';
 import { Rng } from './rng';
 import { advanceCombo, clearPoints, placePoints, praiseLevel } from './scoring';
 
-export type ModeId = 'classic' | 'timeattack' | 'daily' | 'zen' | 'adventure' | 'tutorial' | 'cascade';
+export type ModeId = 'classic' | 'timeattack' | 'versus' | 'zen' | 'adventure' | 'tutorial' | 'cascade';
 export type EndReason = 'gameover' | 'timeup' | 'finished' | 'win' | 'fail';
 
 export const TIME_ATTACK_MS = 120_000;
 export const TIME_PER_LINE_MS = 1_500;
 export const TIME_PER_COMBO_MS = 700;
 export const STUCK_PENALTY_MS = 8_000;
-export const DAILY_ROUNDS = 20;
 
 export interface SessionOptions {
   mode: ModeId;
@@ -110,8 +109,8 @@ export class GameSession {
         return Math.min(0.9, classicDifficulty(this.score * 1.4, this.moves));
       case 'zen':
         return 0.2;
-      case 'daily':
-        return Math.min(0.85, 0.12 + this.rounds * 0.038);
+      case 'versus':
+        return Math.min(0.85, 0.15 + classicDifficulty(this.score * 1.5, this.moves) * 0.7);
       default:
         return this.level?.difficulty ?? 0.3;
     }
@@ -249,7 +248,6 @@ export class GameSession {
     }
 
     if (this.tray.every((p) => p === null)) {
-      if (this.mode === 'daily' && this.rounds >= DAILY_ROUNDS) return this.finish(res, 'finished');
       if (this.mode === 'tutorial' && this.rounds >= (this.level?.sets?.length ?? 0)) return this.finish(res, 'win');
       this.refill();
       res.refilled = true;
@@ -297,6 +295,11 @@ export class GameSession {
     return true;
   }
 
+  /** Termina desde fuera (Versus: el rival ganó, se acabó el tiempo o la basura bloqueó el tablero). */
+  forceEnd(reason: EndReason) {
+    if (!this.ended) this.ended = reason;
+  }
+
   /** Termina voluntariamente (p. ej. salir al menú). */
   abandon() {
     if (!this.ended) this.ended = 'gameover';
@@ -336,8 +339,6 @@ export class GameSession {
         const id = fixed[i];
         return id ? { shape: shapeFrom(id), color: 1 + ((this.rounds * 3 + i * 2) % 7), gems: [] } : null;
       });
-    } else if (this.mode === 'daily') {
-      this.tray = dealPure(this.rng, this.difficulty);
     } else {
       this.tray = dealSet(this.board, this.rng, {
         difficulty: this.difficulty,

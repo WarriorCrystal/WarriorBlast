@@ -71,6 +71,8 @@ const P: Record<string, string> = {
   down: '<path d="M5 9l7 7 7-7"/>',
   drop: '<path d="M5 5l7 7 7-7M5 11.5l7 7 7-7"/><path d="M4 21h16"/>',
   rotate: '<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 3.5v4.5H15"/>',
+  swords: '<path d="M4 4l9.5 9.5M4 4v3.5M4 4h3.5M20 4l-9.5 9.5M20 4v3.5M20 4h-3.5"/><path d="M11 15.5l-4.5 4.5M5 14l5 5M13 15.5l4.5 4.5M19 14l-5 5"/>',
+  shield: '<path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z"/>',
   hold: '<rect x="4.5" y="4.5" width="15" height="15" rx="2.5" stroke-dasharray="3 2.4"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none"/>',
 };
 
