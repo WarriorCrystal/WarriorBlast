@@ -1,5 +1,5 @@
 /**
- * Formato de nivel (modo Aventura). Ver docs/NIVELES.md para ejemplos.
+ * Formato de nivel (modo Aventura). Ver docs/LEVELS.md para ejemplos.
  */
 export type Goal =
   | { type: 'score'; target: number } // alcanzar X puntos

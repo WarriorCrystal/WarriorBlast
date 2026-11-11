@@ -1,39 +1,39 @@
-# Cómo añadir una skin
+# How to add a skin
 
-Una skin es **un solo archivo** en `src/skins/defs/`. Se registra sola (con `import.meta.glob`):
-no hay que tocar la lógica del juego, la tienda ni el render.
+A skin is **a single file** in `src/skins/defs/`. It registers itself (via `import.meta.glob`),
+so you don't need to touch the game logic, the shop or the renderer.
 
-## Pasos
+## Steps
 
-1. Copia una skin existente, por ejemplo `src/skins/defs/pastel.ts`, a `src/skins/defs/mi-skin.ts`.
-2. Cambia `id` (único, sin espacios), `name`, `description`, `price` y `order` (posición en la tienda).
-3. Ajusta los colores y los dibujos (ver tabla). Guarda: con `npm run dev` aparece al instante en la tienda.
+1. Copy an existing skin, for example `src/skins/defs/pastel.ts`, to `src/skins/defs/my-skin.ts`.
+2. Change `id` (unique, no spaces), `name`, `description`, `price` and `order` (position in the shop).
+3. Adjust the colors and drawings (see the table). Save: with `npm run dev` it shows up in the shop instantly.
 
-## Qué define una skin (`src/skins/types.ts`)
+## What a skin defines (`src/skins/types.ts`)
 
-| Campo | Para qué sirve |
+| Field | Purpose |
 |---|---|
-| `blocks` | 7 colores de bloque + 1 color "piedra" (bloques grises/diana) |
-| `ui` | Colores de menús y HUD (`bg`, `panel`, `text`, `accent`…), radio de esquinas, `glass` (vidrio esmerilado), `font` (solo fuentes del sistema) |
-| `drawBackground(ctx, w, h)` | Fondo de pantalla completo (Canvas 2D) |
-| `drawBoard(ctx, size, cell)` | Marco del tablero y celdas vacías |
-| `drawBlock(ctx, s, color, variant)` | Un bloque de `s`×`s`. `variant`: `normal`, `ghost` (sombra al arrastrar) o `stone` |
-| `blockMargin` | Espacio extra alrededor del bloque para brillos (fracción de celda) |
-| `drawGem` / `drawTarget` | (Opcional) iconos de gema y diana encima de un bloque |
-| `particles` | Dibujo de una partícula + cantidad, tamaño, velocidad, gravedad, vida, mezcla (`add`/`normal`) |
-| `ambient` | (Opcional) partículas flotantes del fondo |
-| `flash` | Color del destello al limpiar líneas |
-| `frosted` | El tablero muestra el fondo desenfocado detrás (efecto vidrio) |
-| `pixelated` | Escalado sin suavizado (pixel art) |
-| `sound` | Ambientación: nota raíz, escala, timbres y música generativa (tempo, progresión de acordes, instrumentos, reverb, eco, percusión) |
+| `blocks` | 7 block colors + 1 "stone" color (gray/target blocks) |
+| `ui` | Menu and HUD colors (`bg`, `panel`, `text`, `accent`…), corner radius, `glass` (frosted glass), `font` (system fonts only) |
+| `drawBackground(ctx, w, h)` | Full-screen background (Canvas 2D) |
+| `drawBoard(ctx, size, cell)` | Board frame and empty cells |
+| `drawBlock(ctx, s, color, variant)` | One `s`×`s` block. `variant`: `normal`, `ghost` (shadow while dragging) or `stone` |
+| `blockMargin` | Extra space around the block for glows (fraction of a cell) |
+| `drawGem` / `drawTarget` | (Optional) gem and target icons drawn on top of a block |
+| `particles` | Particle drawing + count, size, speed, gravity, lifetime, blend (`add`/`normal`) |
+| `ambient` | (Optional) floating background particles |
+| `flash` | Flash color when lines clear |
+| `frosted` | The board shows the blurred background behind it (glass effect) |
+| `pixelated` | Unsmoothed scaling (pixel art) |
+| `sound` | Audio mood: root note, scale, timbres and generative music (tempo, chord progression, instruments, reverb, echo, percussion) |
 
-Todo se dibuja con la API Canvas 2D estándar y se convierte en texturas WebGL automáticamente,
-a la resolución de la pantalla. Las utilidades de `src/skins/draw.ts` (`roundRect`, `shade`, `rgba`,
-`star`, `softDot`, `drawGemIcon`…) ahorran trabajo.
+Everything is drawn with the standard Canvas 2D API and automatically converted into WebGL textures
+at the screen's resolution. The helpers in `src/skins/draw.ts` (`roundRect`, `shade`, `rgba`,
+`star`, `softDot`, `drawGemIcon`…) save you work.
 
-## Consejos
+## Tips
 
-- Prueba la skin en las cuatro situaciones: tablero, pieza arrastrada (`ghost`), limpieza (partículas y `flash`) y menús (`ui`).
-- Mantén el contraste entre `ui.text` y `ui.panel`.
-- Los sonidos usan síntesis Web Audio: no hace falta (ni conviene) añadir archivos de audio.
-- Precio orientativo: una partida normal da 20–80 monedas; 300–1200 hace que cada skin cueste entre unas pocas y unas veinte partidas.
+- Test the skin in all four situations: board, dragged piece (`ghost`), clearing (particles and `flash`) and menus (`ui`).
+- Keep enough contrast between `ui.text` and `ui.panel`.
+- Sounds use Web Audio synthesis: there's no need (and it's not advisable) to add audio files.
+- Suggested price: a normal game gives 20–80 coins; 300–1200 makes each skin cost from a few to about twenty games.

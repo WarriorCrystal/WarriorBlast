@@ -1,43 +1,53 @@
 # Warrior Blast
 
-Puzzle de bloques original (tablero 8×8, 3 piezas por turno, limpia filas y columnas, encadena combos).
-TypeScript + PixiJS (WebGL) + Vite, instalable como **PWA** y **100 % offline**.
+An original block puzzle game (8×8 board, 3 pieces per turn, clear rows and columns, chain combos).
+TypeScript + PixiJS (WebGL) + Vite, installable as a **PWA** and **100% offline**.
 
-## Comandos
+Play it: https://warriorcrystal.github.io/WarriorBlast/
 
-| Comando | Qué hace |
+## Commands
+
+| Command | What it does |
 |---|---|
-| `npm run dev` | Servidor de desarrollo (también en el móvil por la red local: usa la IP que muestra) |
-| `npm test` | Tests del núcleo + simulación de balance de niveles |
-| `npm run build` | Versión final en `dist/` (con service worker) |
-| `npm run preview` | Sirve `dist/` para probarla |
-| `npm run icons` | Regenera los iconos PNG por código |
-| `node scripts/offline-check.mjs` | Verifica offline real (necesita `npm run build` y Edge) |
-| `node scripts/shots.mjs <url> <carpeta>` | Capturas automáticas de QA (Edge headless) |
+| `npm run dev` | Development server (also reachable from a phone over the local network: use the IP it prints) |
+| `npm test` | Core logic tests + level balance simulation |
+| `npm run build` | Production build in `dist/` (with service worker) |
+| `npm run preview` | Serves `dist/` for testing |
+| `npm run icons` | Regenerates the PNG icons from code |
+| `node scripts/offline-check.mjs` | Verifies real offline behavior (needs `npm run build` and Edge) |
+| `node scripts/shots.mjs <url> <folder>` | Automated QA screenshots (headless Edge) |
 
-Editor de niveles: `npm run dev` y abre `/editor.html`.
+Level editor: run `npm run dev` and open `/editor.html`.
 
-## Arquitectura
+## Architecture
 
 ```
 src/
-  core/        Lógica pura, sin DOM (testeada): rng con semilla, piezas, tablero,
-               puntuación/combos, generador justo, sesión con reglas de cada modo
-  levels/      30 niveles de Aventura + tutorial, como datos legibles
-  skins/       Tipos, utilidades de dibujo y defs/ (un archivo = una skin, autorregistro)
-  render/      PixiJS: texturas generadas desde la skin, vista de juego, partículas, tweens
-  audio/       Efectos y música generativa con Web Audio (sin archivos), vibración
-  i18n/        es.ts / en.ts (detección automática del idioma)
-  save/        Guardado local versionado con migraciones
-  meta/        Monedas, logros, recompensa diaria, estadísticas
-  ui/          Menús y HUD en DOM/CSS + controlador de partida
+  core/        Pure logic, no DOM (tested): seeded RNG, pieces, board,
+               scoring/combos, fair generator, session with each mode's rules
+  levels/      30 Adventure levels + tutorial, as readable data
+  skins/       Types, drawing helpers and defs/ (one file = one skin, self-registering)
+  render/      PixiJS: textures generated from the skin, game view, particles, tweens
+  audio/       Effects and generative music with Web Audio (no files), vibration
+  i18n/        es.ts / en.ts (automatic language detection)
+  save/        Versioned local save with migrations
+  meta/        Coins, achievements, daily reward, statistics
+  ui/          Menus and HUD in DOM/CSS + game controller
 ```
 
-- **Modos:** Clásico, Contrarreloj (2 min, las líneas suman tiempo), Desafío diario (semilla por fecha, 20 rondas),
-  Zen (sin game over: si te atascas llegan piezas nuevas; deshacer ilimitado), Aventura (30 niveles, estrellas).
-- **Generador justo:** si alguna forma cabe, al menos una pieza del set cabe; con dificultad baja exige que el set
-  completo sea colocable, ofrece piezas "salvavidas" y elige el set más amable; se endurece con la puntuación.
-- **Combos:** cada jugada que limpia sube el multiplicador (x2, x3…); se mantiene durante 2 jugadas sin limpiar
-  (los puntitos del indicador muestran cuántas quedan).
+- **Modes:** Classic, Time Attack (2 min, clearing lines adds time), Daily Challenge (date-based seed, 20 rounds),
+  Zen (no game over: new pieces arrive if you get stuck; unlimited undo), Adventure (30 levels, stars).
+- **Fair generator:** if any shape fits, at least one piece in the set fits; at low difficulty the whole set
+  must be placeable, "lifesaver" pieces are offered, and the friendliest set is chosen. It gets harder as your score grows.
+- **Combos:** every move that clears lines raises the multiplier (x2, x3…); it holds for 2 moves without a clear
+  (the indicator dots show how many are left).
 
-Documentación: [docs/SKINS.md](docs/SKINS.md) · [docs/NIVELES.md](docs/NIVELES.md) · [docs/PUBLICAR.md](docs/PUBLICAR.md)
+## Deployment
+
+Every push to `main` is tested, built and published to GitHub Pages by
+[.github/workflows/deploy.yml](.github/workflows/deploy.yml). Installed copies of the game update themselves
+automatically. See [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+## Documentation
+
+[docs/SKINS.md](docs/SKINS.md) · [docs/LEVELS.md](docs/LEVELS.md) · [docs/PUBLISHING.md](docs/PUBLISHING.md)

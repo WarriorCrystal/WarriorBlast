@@ -149,7 +149,7 @@ export class Board {
   }
 
   /**
-   * Crea un tablero desde filas ASCII (ver docs/NIVELES.md):
+   * Crea un tablero desde filas ASCII (ver docs/LEVELS.md):
    *  '.' vacío · '1'..'7' bloque de color · '#' bloque gris · 'G' bloque con gema · 'X' bloque objetivo
    */
   static fromAscii(rows: string[]): Board {
