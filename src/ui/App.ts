@@ -6,10 +6,12 @@ import { LANGS, fmt, getLang, setLang, t, type LangCode } from '../i18n';
 import { LEVELS } from '../levels/levels';
 import { lookupCode } from '../meta/codes';
 import { ACHIEVEMENTS, levelsDone, totalStars, type AchievementDef, type Progress } from '../meta/progress';
+import type { CascadeView } from '../render/CascadeView';
 import type { GameView } from '../render/GameView';
 import type { SaveStore } from '../save/save';
 import { SKINS, getSkin } from '../skins';
 import type { SkinDef } from '../skins/types';
+import { CascadeController } from './CascadeController';
 import { GameController, type EndInfo } from './GameController';
 import { clearEl, coinIcon, countUp, h, icon } from './dom';
 
@@ -40,6 +42,9 @@ export class App {
   private toastHost = h('div.toasts');
   private current: ScreenName = 'home';
   private game: GameController;
+  private cascade: CascadeController;
+  /** Controlador de la partida en curso (bloques o Cascada). */
+  private active: GameController | CascadeController;
   private modalStack: Array<{ el: HTMLElement; dismiss?: () => void }> = [];
   private toastQueue: AchievementDef[] = [];
   private toastBusy = false;
@@ -47,31 +52,35 @@ export class App {
   constructor(
     root: HTMLElement,
     private view: GameView,
+    private cview: CascadeView,
     private store: SaveStore,
     private progress: Progress,
   ) {
     root.append(this.screenHost, this.modalHost, this.toastHost);
-    this.game = new GameController(view, progress, {
-      onEnd: (info) => this.showEnd(info),
+    const hooks = {
+      onEnd: (info: EndInfo) => this.showEnd(info),
       onPause: () => this.showPause(),
       onTutorialDone: () => {
         this.d.tutorialDone = true;
         this.store.save();
         this.startGame('classic');
       },
-      onAchievements: (list) => this.toast(list),
-    });
+      onAchievements: (list: AchievementDef[]) => this.toast(list),
+    };
+    this.game = new GameController(view, progress, hooks);
+    this.cascade = new CascadeController(view, cview, progress, hooks);
+    this.active = this.game;
     window.addEventListener('popstate', () => this.onBack());
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        if (this.current === 'game' && this.game.session && !this.game.session.ended && !this.game.paused) this.showPause();
+        if (this.current === 'game' && this.active.session && !this.active.session.ended && !this.active.paused) this.showPause();
         audio.suspend();
       } else audio.resume();
     });
     let rt = 0;
     window.addEventListener('resize', () => {
       clearTimeout(rt);
-      rt = window.setTimeout(() => (this.current === 'game' ? this.game.updateInsets() : this.view.relayout()), 120);
+      rt = window.setTimeout(() => (this.current === 'game' ? this.active.updateInsets() : this.view.relayout()), 120);
     });
   }
 
@@ -113,6 +122,7 @@ export class App {
     document.body.dataset.skin = s.id;
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', u.bg);
     this.view.setSkin(s);
+    this.cview.setSkin(s);
     audio.setSkin(s.sound);
   }
 
@@ -163,7 +173,7 @@ export class App {
 
   private goHome() {
     this.closeAllModals();
-    this.game.leave();
+    this.active.leave();
     this.show('home');
   }
 
@@ -190,9 +200,16 @@ export class App {
 
   startGame(mode: ModeId, levelId?: number) {
     this.closeAllModals();
-    this.game.start(mode, levelId);
-    this.show('game', this.game.root);
-    requestAnimationFrame(() => this.game.updateInsets());
+    if (this.active !== (mode === 'cascade' ? this.cascade : this.game)) this.active.leave();
+    if (mode === 'cascade') {
+      this.active = this.cascade;
+      this.cascade.start();
+    } else {
+      this.active = this.game;
+      this.game.start(mode, levelId);
+    }
+    this.show('game', this.active.root);
+    requestAnimationFrame(() => this.active.updateInsets());
   }
 
   // =============== piezas comunes ===============
@@ -284,6 +301,7 @@ export class App {
           card('timeattack', 'clock', 'trophy', fmt(d.best.timeattack)),
           card('daily', 'calendar', dailyPlayed ? 'check' : 'bolt', dailyPlayed ? fmt(d.daily.todayScore) : String(d.daily.streak), dailyPlayed ? 'done' : 'new'),
           card('zen', 'leaf', 'trophy', fmt(d.best.zen)),
+          card('cascade', 'cascade', 'trophy', fmt(d.best.cascade), 'wide'),
         ),
       ),
       h(
@@ -534,6 +552,7 @@ export class App {
           row(t('mode.classic'), d.best.classic),
           row(t('mode.timeattack'), d.best.timeattack),
           row(t('mode.zen'), d.best.zen),
+          row(t('mode.cascade'), d.best.cascade),
           row(t('mode.daily'), d.daily.todayScore),
         ),
         h(
@@ -705,8 +724,8 @@ export class App {
   }
 
   private showPause() {
-    if (this.modalStack.length || !this.game.session || this.game.session.ended) return;
-    this.game.pause();
+    if (this.modalStack.length || !this.active.session || this.active.session.ended) return;
+    this.active.pause();
     const s = this.d.settings;
     const quick = h(
       'div.quick-toggles',
@@ -730,7 +749,7 @@ export class App {
           this.btn(h('span', icon('play'), t('pause.resume')), () => close(), 'primary big'),
           this.btn(h('span', icon('restart'), t('pause.restart')), () => {
             close();
-            this.game.restart();
+            this.active.restart();
           }, 'ghost'),
           this.btn(h('span', icon('home'), t('pause.home')), () => {
             close();
@@ -740,7 +759,7 @@ export class App {
         quick,
       ),
       true,
-      () => this.game.resume(),
+      () => this.active.resume(),
     );
   }
 
@@ -748,7 +767,8 @@ export class App {
     if (info.mode === 'adventure') return this.showLevelEnd(info);
     const s = info.session;
     const r = info.reward;
-    const title = info.reason === 'timeup' ? t('over.timeup') : info.reason === 'finished' ? t('over.finished') : t('over.title');
+    const title =
+      info.mode === 'cascade' ? t('over.topout') : info.reason === 'timeup' ? t('over.timeup') : info.reason === 'finished' ? t('over.finished') : t('over.title');
     const scoreEl = h('div.final-score', '0');
     const panel = h(
       'div.panel.gameover',
@@ -759,7 +779,9 @@ export class App {
       h(
         'div.over-stats',
         h('div', h('small', t('over.lines')), h('b', fmt(s.lines))),
-        h('div', h('small', t('over.bestCombo')), h('b', `x${s.bestCombo}`)),
+        'level' in s
+          ? h('div', h('small', t('over.level')), h('b', String(s.level)))
+          : h('div', h('small', t('over.bestCombo')), h('b', `x${s.bestCombo}`)),
       ),
       r.coins > 0 ? h('div.coins-won', coinIcon(), t('over.coins', { n: r.coins })) : null,
       info.mode === 'daily' ? h('p.dim.center', t('over.dailyDone')) : null,

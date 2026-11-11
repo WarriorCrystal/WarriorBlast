@@ -5,7 +5,7 @@ import { shapeFrom, type Piece } from './pieces';
 import { Rng } from './rng';
 import { advanceCombo, clearPoints, placePoints, praiseLevel } from './scoring';
 
-export type ModeId = 'classic' | 'timeattack' | 'daily' | 'zen' | 'adventure' | 'tutorial';
+export type ModeId = 'classic' | 'timeattack' | 'daily' | 'zen' | 'adventure' | 'tutorial' | 'cascade';
 export type EndReason = 'gameover' | 'timeup' | 'finished' | 'win' | 'fail';
 
 export const TIME_ATTACK_MS = 120_000;

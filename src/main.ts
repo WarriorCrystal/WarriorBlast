@@ -3,6 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { audio, haptics } from './audio/audio';
 import { detectLang, setLang } from './i18n';
 import { Progress } from './meta/progress';
+import { CascadeView } from './render/CascadeView';
 import { GameView } from './render/GameView';
 import { SaveStore } from './save/save';
 import { App } from './ui/App';
@@ -30,8 +31,9 @@ async function boot() {
   document.body.prepend(app.canvas);
 
   const view = new GameView(app);
+  const cview = new CascadeView(view);
   const ui = document.getElementById('ui')!;
-  const game = new App(ui, view, store, progress);
+  const game = new App(ui, view, cview, store, progress);
 
   // iOS: el audio solo arranca tras un gesto del usuario
   const unlock = () => audio.unlock();
@@ -55,7 +57,7 @@ async function boot() {
   }
 
   // Exponer para depuración en desarrollo
-  if (import.meta.env.DEV) Object.assign(window, { __wb: { app, view, store, progress, game } });
+  if (import.meta.env.DEV) Object.assign(window, { __wb: { app, view, cview, store, progress, game } });
 }
 
 boot().catch((e) => {

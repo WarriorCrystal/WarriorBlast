@@ -1,9 +1,16 @@
 import { COINS_PER_STAR } from '../core/level';
 import { dateKey, daysBetween } from '../core/rng';
 import { coinsForScore } from '../core/scoring';
-import type { GameSession } from '../core/session';
+import type { GameSession, ModeId } from '../core/session';
 import { LEVELS } from '../levels/levels';
 import type { BestMode, SaveData, SaveStore } from '../save/save';
+
+/** Lo mínimo de una partida que necesitan récords y recompensas (cualquier modo). */
+export interface RunResult {
+  mode: ModeId;
+  score: number;
+  bestCombo: number;
+}
 
 /* ================= Logros ================= */
 
@@ -36,6 +43,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'time_5k', target: 5000, reward: 100, value: (d) => d.best.timeattack },
   { id: 'zen_200', target: 200, reward: 50, value: (d) => d.stats.zenMoves },
   { id: 'skin_1', target: 1, reward: 50, value: (d) => d.stats.skinsBought },
+  { id: 'cascade_25k', target: 25000, reward: 150, value: (d) => d.best.cascade },
 ];
 
 /* ================= Resultados ================= */
@@ -92,7 +100,7 @@ export class Progress {
    * Tras cada jugada: guarda el récord en vivo (Clásico/Zen/Contrarreloj no necesitan terminar
    * para contar) y desbloquea los logros en el momento en que se cumplen.
    */
-  liveUpdate(session: GameSession): AchievementDef[] {
+  liveUpdate(session: RunResult): AchievementDef[] {
     const m = session.mode as BestMode;
     if (m in this.d.best) this.d.best[m] = Math.max(this.d.best[m], session.score);
     const achievements = this.checkAchievements();
@@ -102,7 +110,7 @@ export class Progress {
 
   /** Fin de partida (no Aventura). Devuelve monedas ganadas y logros. */
   /** bestBefore: récord al empezar la partida (el récord se actualiza en vivo durante la jugada). */
-  finishGame(session: GameSession, bestBefore?: number): GameReward {
+  finishGame(session: RunResult, bestBefore?: number): GameReward {
     const d = this.d;
     d.stats.games++;
     let coins = coinsForScore(session.score, session.bestCombo);
@@ -133,6 +141,7 @@ export class Progress {
       }
     }
     if (session.mode === 'zen') coins = Math.floor(coins / 2); // Zen no tiene riesgo
+    if (session.mode === 'cascade') coins = Math.floor(coins / 4); // Cascada puntúa mucho más alto
     this.addCoins(coins);
     const achievements = this.checkAchievements();
     this.store.save();

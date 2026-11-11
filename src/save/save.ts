@@ -10,7 +10,7 @@ import type { LangCode } from '../i18n';
 export const SAVE_VERSION = 2;
 const KEY = 'warriorblast.save';
 
-export type BestMode = 'classic' | 'timeattack' | 'zen';
+export type BestMode = 'classic' | 'timeattack' | 'zen' | 'cascade';
 
 export interface SaveData {
   version: number;
@@ -45,7 +45,7 @@ export function defaults(): SaveData {
     ownedSkins: ['neon'],
     settings: { music: true, sfx: true, vibration: true, lang: null },
     tutorialDone: false,
-    best: { classic: 0, timeattack: 0, zen: 0 },
+    best: { classic: 0, timeattack: 0, zen: 0, cascade: 0 },
     daily: { lastDate: null, todayScore: 0, streak: 0, bestStreak: 0, history: {} },
     login: { lastDate: null, streak: 0 },
     levels: {},

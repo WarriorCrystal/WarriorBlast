@@ -65,6 +65,13 @@ const P: Record<string, string> = {
   combo: '<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z" fill="currentColor" fill-opacity=".25"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
   bolt: '<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>',
+  cascade: '<rect x="9.5" y="3" width="5" height="5" rx="1" fill="currentColor" stroke="none"/><rect x="4" y="15" width="5" height="5" rx="1"/><rect x="9.5" y="15" width="5" height="5" rx="1"/><rect x="15" y="15" width="5" height="5" rx="1"/><rect x="15" y="9.5" width="5" height="5" rx="1"/>',
+  left: '<path d="M15 5l-7 7 7 7"/>',
+  right: '<path d="M9 5l7 7-7 7"/>',
+  down: '<path d="M5 9l7 7 7-7"/>',
+  drop: '<path d="M5 5l7 7 7-7M5 11.5l7 7 7-7"/><path d="M4 21h16"/>',
+  rotate: '<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 3.5v4.5H15"/>',
+  hold: '<rect x="4.5" y="4.5" width="15" height="15" rx="2.5" stroke-dasharray="3 2.4"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none"/>',
 };
 
 export function icon(name: keyof typeof P | string, cls = ''): HTMLElement {

@@ -461,3 +461,27 @@ body[data-skin='blockworld'] .logo-sub { color: #fff; }
   .mode-card { min-height: 0; gap: 10px; padding: 12px; }
   .nav-btn { min-height: 52px; padding: 8px 4px 6px; }
 }
+
+/* ---------- Cascada (piezas que caen) ---------- */
+.mode-card.m-cascade { --mc: var(--c4); }
+.mode-card.wide { grid-column: span 2; min-height: 0; flex-direction: row; align-items: center; gap: 12px; }
+.mode-card.wide .mc-head { order: 2; }
+.mode-card.wide .mc-text { flex: 1; order: 1; }
+.mode-card.wide .mc-icon { order: 2; }
+.cascade-screen { touch-action: none; }
+.cascade-spacer { flex: 1; }
+.cascade-pad { width: 100%; max-width: 460px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; pointer-events: auto; user-select: none; -webkit-user-select: none; }
+.pad-btn {
+  height: 56px; border-radius: var(--r-md); display: grid; place-items: center; font-size: 24px;
+  background: var(--surface); border: 1px solid var(--line); touch-action: none; -webkit-touch-callout: none;
+  transition: transform 0.08s var(--ease), background-color 0.1s, border-color 0.1s;
+}
+.pad-btn.on { transform: scale(0.94); background: var(--well-strong); border-color: var(--line-strong); }
+.pad-btn.p-drop { color: var(--accent); }
+.pad-btn.p-rot { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.pad-btn.p-rot.on { filter: brightness(0.9); }
+.cascade-keys { display: none; margin-bottom: 10px; font-size: 12px; font-weight: 600; color: var(--text-dim); text-align: center; }
+@media (hover: hover) and (pointer: fine) { .cascade-keys { display: block; } }
+@media (max-height: 640px) { .pad-btn { height: 46px; } }
+body.pixel .pad-btn { border-width: 2px; border-radius: 0; box-shadow: 3px 3px 0 #000; }
+body.glass .pad-btn { -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); border-color: rgba(255, 255, 255, 0.4); }

@@ -36,7 +36,9 @@ src/
 ```
 
 - **Modes:** Classic, Time Attack (2 min, clearing lines adds time), Daily Challenge (date-based seed, 20 rounds),
-  Zen (no game over: new pieces arrive if you get stuck; unlimited undo), Adventure (30 levels, stars).
+  Zen (no game over: new pieces arrive if you get stuck; unlimited undo), Adventure (30 levels, stars),
+  Cascade (falling four-block pieces in a 10×20 well: 7-bag, wall kicks, hold, ghost, 5-piece preview, levels speed up
+  every 10 lines; keyboard, on-screen buttons or gestures: tap = rotate, drag = move, swipe down = drop).
 - **Fair generator:** if any shape fits, at least one piece in the set fits; at low difficulty the whole set
   must be placeable, "lifesaver" pieces are offered, and the friendliest set is chosen. It gets harder as your score grows.
 - **Combos:** every move that clears lines raises the multiplier (x2, x3…); it holds for 2 moves without a clear

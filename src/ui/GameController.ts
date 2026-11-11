@@ -1,6 +1,7 @@
 import { audio, haptics } from '../audio/audio';
 import type { Goal, LevelDef } from '../core/level';
 import { dailySeed } from '../core/rng';
+import type { CascadeSession } from '../core/cascade';
 import { DAILY_ROUNDS, GameSession, type EndReason, type ModeId, type MoveResult } from '../core/session';
 import { fmt, t } from '../i18n';
 import { LEVELS, TUTORIAL } from '../levels/levels';
@@ -11,7 +12,7 @@ import { countUp, h, icon } from './dom';
 export interface EndInfo {
   mode: ModeId;
   reason: EndReason;
-  session: GameSession;
+  session: GameSession | CascadeSession;
   reward: GameReward;
   level?: LevelDef;
 }
