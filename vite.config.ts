@@ -14,7 +14,7 @@ export default defineConfig({
   build: { target: 'es2020', chunkSizeWarningLimit: 1200 },
   plugins: [
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       injectRegister: false,
       manifest: {
         name: 'Warrior Blast',
@@ -39,6 +39,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest,woff2,json}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [],
       },

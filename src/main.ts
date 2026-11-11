@@ -1,12 +1,11 @@
 import { Application } from 'pixi.js';
 import { registerSW } from 'virtual:pwa-register';
 import { audio, haptics } from './audio/audio';
-import { detectLang, setLang, t } from './i18n';
+import { detectLang, setLang } from './i18n';
 import { Progress } from './meta/progress';
 import { GameView } from './render/GameView';
 import { SaveStore } from './save/save';
 import { App } from './ui/App';
-import { h } from './ui/dom';
 import './ui/styles.css';
 
 async function boot() {
@@ -45,15 +44,12 @@ async function boot() {
 
   // Service worker: precache total para jugar offline
   if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    const update = registerSW({
+    // autoUpdate: la nueva versión se activa y recarga sola; además se
+    // busca una versión nueva cada hora por si la pestaña queda abierta.
+    registerSW({
       immediate: true,
-      onNeedRefresh() {
-        const bar = h(
-          'div.update-bar',
-          h('span', t('update.ready')),
-          h('button.btn.small.primary', { onclick: () => update(true) }, t('update.reload')),
-        );
-        document.body.appendChild(bar);
+      onRegisteredSW(_url, reg) {
+        if (reg) setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
       },
     });
   }
