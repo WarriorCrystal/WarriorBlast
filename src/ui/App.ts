@@ -257,10 +257,23 @@ export class App {
       2, 0, 3, 0, 6,
       0, 7, 0, 4, 0,
     ];
-    const blocks = h('div.logo-blocks', ...W.map((c) => h(c ? `i.c${c}` : 'i.empty')));
+    // la W de bloques hace de primera letra de WARRIOR; cada bloque salta con su retardo (ola)
+    const blocks = h(
+      'span.logo-blocks',
+      { 'aria-hidden': 'true' },
+      ...W.map((c, i) => {
+        const b = h(c ? `i.c${c}` : 'i.empty');
+        b.style.setProperty('--d', `${(i % 5) * 0.12}s`);
+        return b;
+      }),
+    );
     // frase aleatoria bajo el título; al tocarla sale otra
     const sub = h('button.logo-sub', { onclick: () => (sub.textContent = randomTagline()) }, randomTagline());
-    return h('div.logo', blocks, h('h1.logo-word', h('span', 'WARRIOR'), h('span.blast', 'BLAST')), sub);
+    return h(
+      'div.logo',
+      h('h1.logo-word', { 'aria-label': 'Warrior Blast' }, h('span.warrior', blocks, 'ARRIOR'), h('span.blast', 'BLAST')),
+      sub,
+    );
   }
 
   private renderHome(): HTMLElement {

@@ -128,10 +128,17 @@ button:focus-visible, .code-input:focus-visible, .switch input:focus-visible + i
 .home { justify-content: space-between; gap: clamp(8px, 1.6vh, 16px); }
 .home-top { display: flex; justify-content: space-between; align-items: center; }
 .logo { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.logo-blocks { display: inline-grid; grid-template-columns: repeat(5, 12px); gap: 3px; margin-bottom: 14px; }
-@media (max-height: 900px) { .logo-blocks { display: none; } }
-.logo-blocks i { width: 12px; height: 12px; border-radius: 3px; }
-.logo-blocks i.empty { visibility: hidden; }
+/* W de bloques dentro de WARRIOR: mide lo mismo que las mayúsculas */
+.logo-word .warrior { display: inline-block; white-space: nowrap; }
+.logo-blocks {
+  display: inline-grid; grid-template-columns: repeat(5, 0.19em); grid-auto-rows: 0.19em; gap: 0.036em;
+  /* la línea base de la rejilla es el pie de la 1.ª fila: se sube el resto (4 filas + 4 huecos) para apoyarla en la línea base */
+  margin-right: 0.08em; vertical-align: 0.904em;
+}
+.logo-blocks i { border-radius: 0.03em; animation: logoWave 3.2s ease-in-out var(--d, 0s) infinite; }
+.logo-blocks i.empty { visibility: hidden; animation: none; }
+/* ola suave: cada columna sube un poco y baja, sin rebote ni escala */
+@keyframes logoWave { 0%, 36%, 100% { transform: none; } 18% { transform: translateY(-0.05em); } }
 .logo-blocks i.c1 { background: var(--c1); } .logo-blocks i.c2 { background: var(--c2); }
 .logo-blocks i.c3 { background: var(--c3); } .logo-blocks i.c4 { background: var(--c4); }
 .logo-blocks i.c5 { background: var(--c5); } .logo-blocks i.c6 { background: var(--c6); }
@@ -452,7 +459,6 @@ body[data-skin='blockworld'] .logo-sub { color: #fff; }
 .screen.menu.home { overflow-y: auto; scrollbar-width: none; }
 .screen.menu.home::-webkit-scrollbar { display: none; }
 @media (max-height: 760px) {
-  .logo-blocks { display: none; }
   .logo-sub { margin-top: 8px; }
   .home { gap: 12px; }
   .play-btn { padding: 14px 14px 14px 18px; }
