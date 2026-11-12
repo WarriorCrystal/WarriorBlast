@@ -1,4 +1,4 @@
-import { Application, Container, Sprite, Text, TextStyle, Texture } from 'pixi.js';
+import { Application, Color, Container, FillGradient, Sprite, Text, TextStyle, Texture } from 'pixi.js';
 import { audio, haptics } from '../audio/audio';
 import { MARK_GEM, MARK_TARGET, SIZE, STONE_COLOR } from '../core/board';
 import type { Piece } from '../core/pieces';
@@ -40,6 +40,15 @@ interface Drag {
 }
 
 const SYSTEM_FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+/** Fuente de los textos emergentes (elogios, combos, puntos). Empaquetada con @fontsource. */
+const FX_FONT = '"Lilita One"';
+
+/** Mezcla un color con otro (k = 0 → a, 1 → b). */
+function mix(a: string, b: string, k: number): string {
+  const [r1, g1, b1] = new Color(a).toRgbArray();
+  const [r2, g2, b2] = new Color(b).toRgbArray();
+  return new Color([r1 + (r2 - r1) * k, g1 + (g2 - g1) * k, b1 + (b2 - b1) * k]).toHex();
+}
 
 export class GameView {
   readonly app: Application;
@@ -213,7 +222,7 @@ export class GameView {
     if (!on) {
       this.cancelDrag();
       this.clearHint();
-      this.textLayer.removeChildren().forEach((c) => c.destroy());
+      this.textLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
       this.particles.clear();
     }
   }
@@ -223,7 +232,7 @@ export class GameView {
     this.session = session;
     this.host = host;
     this.clearHint();
-    this.textLayer.removeChildren().forEach((c) => c.destroy());
+    this.textLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
     this.fxLayer.children.forEach((c) => (c.visible = false));
     this.syncBoard();
     this.syncTray(!!session);
@@ -728,43 +737,113 @@ export class GameView {
 
   /** Texto emergente (elogios, puntos, avisos). */
   popText(str: string, x: number, y: number, size: number, color: string, o: { big?: boolean; rise?: number; dur?: number; delay?: number } = {}) {
-    const font = this.skin.ui.font ?? SYSTEM_FONT;
-    const style = new TextStyle({
-      fontFamily: font,
-      fontSize: Math.round(size),
-      fontWeight: '900',
-      fill: color,
-      align: 'center',
-      stroke: { color: o.big ? '#0a0614' : '#000000', width: Math.max(3, size * (o.big ? 0.16 : 0.12)), join: 'round' },
-      dropShadow: o.big ? { color, blur: size * 0.35, distance: 0, alpha: 0.85, angle: 0 } : { color: '#000000', blur: 4, distance: 2, alpha: 0.5, angle: Math.PI / 2 },
-      letterSpacing: o.big ? 1 : 0,
-    });
-    const txt = new Text({ text: str, style });
-    txt.anchor.set(0.5);
-    txt.position.set(x, y);
-    txt.alpha = 0;
-    // no salir de pantalla
-    const maxW = this.L.W - 24;
-    this.textLayer.addChild(txt);
-    const fit = txt.width > maxW ? maxW / txt.width : 1;
+    const fontFamily = `${FX_FONT}, ${this.skin.ui.font ?? SYSTEM_FONT}`;
+    const fontSize = Math.round(size);
     const dur = o.dur ?? 1000;
     const delay = o.delay ?? 0;
-    if (o.big) {
-      txt.scale.set(0.2 * fit);
-      this.tweens.to(txt, { alpha: 1 }, 120, { delay });
-      this.tweens.to(txt, { scale: fit }, 520, { delay, ease: ease.outElastic });
-      txt.rotation = (Math.random() - 0.5) * 0.12;
-      this.tweens.to(txt, { y: y - size * 0.8, alpha: 0, scale: fit * 1.1 }, 360, {
-        delay: delay + dur * 0.72,
-        ease: ease.inQuad,
-        onComplete: () => txt.destroy(),
+    const maxW = this.L.W - 24;
+
+    if (!o.big) {
+      const [r, g, b] = new Color(color).toRgbArray();
+      const isDark = 0.299 * r + 0.587 * g + 0.114 * b < 0.45;
+      const txt = new Text({
+        text: str,
+        style: new TextStyle({
+          fontFamily,
+          fontSize,
+          fill: color,
+          align: 'center',
+          letterSpacing: 1,
+          stroke: { color: isDark ? mix(color, '#ffffff', 0.9) : mix(color, '#000000', 0.82), width: Math.max(3, size * 0.15), join: 'round' },
+          dropShadow: { color: '#000000', blur: 3, distance: Math.max(2, size * 0.07), alpha: isDark ? 0.25 : 0.55, angle: Math.PI / 2 },
+        }),
       });
-    } else {
-      txt.scale.set(0.7 * fit);
-      this.tweens.to(txt, { alpha: 1, scale: fit }, 160, { delay, ease: ease.outBack });
+      txt.anchor.set(0.5);
+      txt.position.set(x, y);
+      txt.alpha = 0;
+      this.textLayer.addChild(txt);
+      const fit = txt.width > maxW ? maxW / txt.width : 1;
+      txt.scale.set(0.6 * fit);
+      this.tweens.to(txt, { alpha: 1, scale: fit }, 180, { delay, ease: ease.outBack });
       this.tweens.to(txt, { y: y - (o.rise ?? size) }, dur, { delay, ease: ease.outCubic });
       this.tweens.to(txt, { alpha: 0 }, dur * 0.35, { delay: delay + dur * 0.65, onComplete: () => txt.destroy() });
+      return;
     }
+
+    // --- Texto grande: relleno degradado, contorno grueso, relieve, halo y destello ---
+    const dark = mix(color, '#000000', 0.8);
+    const fill = new FillGradient({
+      type: 'linear',
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 1 },
+      textureSpace: 'local',
+      colorStops: [
+        { offset: 0, color: mix(color, '#ffffff', 0.75) },
+        { offset: 0.45, color: mix(color, '#ffffff', 0.15) },
+        { offset: 0.55, color },
+        { offset: 1, color: mix(color, '#000000', 0.3) },
+      ],
+    });
+    const stroke = Math.max(4, size * 0.16);
+    const base = { fontFamily, fontSize, align: 'center' as const, letterSpacing: Math.max(1, size * 0.04), padding: size * 0.6 };
+    // halo de color detrás
+    const glow = new Text({
+      text: str,
+      style: new TextStyle({ ...base, fill: color, stroke: { color, width: stroke * 2.6, join: 'round' }, dropShadow: { color, blur: size * 0.45, distance: 0, alpha: 1, angle: 0 } }),
+    });
+    glow.anchor.set(0.5);
+    glow.alpha = 0.45;
+    glow.blendMode = 'add';
+    // texto principal con relieve (sombra sólida hacia abajo)
+    const main = new Text({
+      text: str,
+      style: new TextStyle({
+        ...base,
+        fill,
+        stroke: { color: dark, width: stroke, join: 'round' },
+        dropShadow: { color: dark, blur: 0, distance: Math.max(3, size * 0.1), alpha: 1, angle: Math.PI / 2 },
+      }),
+    });
+    main.anchor.set(0.5);
+    // destello blanco al impactar
+    const flash = new Text({ text: str, style: new TextStyle({ ...base, fill: '#ffffff', stroke: { color: '#ffffff', width: stroke * 0.6, join: 'round' } }) });
+    flash.anchor.set(0.5);
+    flash.blendMode = 'add';
+    flash.alpha = 0;
+
+    const box = new Container();
+    box.addChild(glow, main, flash);
+    box.position.set(x, y);
+    box.alpha = 0;
+    this.textLayer.addChild(box);
+    const fit = main.width > maxW ? maxW / main.width : 1;
+    const destroy = () => {
+      box.destroy({ children: true });
+      fill.destroy();
+    };
+
+    // entrada: cae desde grande, golpe y rebote
+    box.scale.set(2.3 * fit);
+    box.rotation = (Math.random() < 0.5 ? -1 : 1) * (0.05 + Math.random() * 0.05);
+    this.tweens.to(box, { alpha: 1 }, 90, { delay });
+    this.tweens.to(box, { scale: 0.88 * fit, rotation: box.rotation * 0.3 }, 170, { delay, ease: ease.inQuad });
+    this.tweens.to(box, { scale: fit, rotation: 0 }, 380, { delay: delay + 170, ease: ease.outElastic });
+    this.tweens.delay(delay + 170, () => {
+      if (box.destroyed) return;
+      flash.alpha = 0.9;
+      this.tweens.to(flash, { alpha: 0 }, 260, { ease: ease.outQuad });
+      glow.alpha = 0.95;
+      glow.scale.set(0.9);
+      this.tweens.to(glow, { alpha: 0.4, scale: 1.12 }, 420, { ease: ease.outCubic });
+    });
+    // latido suave mientras está en pantalla
+    this.tweens.to(glow, { scale: 1.02 }, 300, { delay: delay + 620, ease: ease.inOutCubic });
+    // salida: sube, se estira un poco y se desvanece
+    this.tweens.to(box, { y: y - size * 0.9, alpha: 0, scale: fit * 1.12 }, 380, {
+      delay: delay + dur * 0.72,
+      ease: ease.inQuad,
+      onComplete: destroy,
+    });
   }
 
   banner(str: string, color?: string) {

@@ -7,6 +7,7 @@ import { CascadeView } from './render/CascadeView';
 import { GameView } from './render/GameView';
 import { SaveStore } from './save/save';
 import { App } from './ui/App';
+import '@fontsource/lilita-one/latin-400.css';
 import './ui/styles.css';
 
 async function boot() {
@@ -16,6 +17,9 @@ async function boot() {
   setLang(s.lang ?? detectLang());
   audio.setEnabled(s.music, s.sfx);
   haptics.enabled = s.vibration;
+
+  // fuente de los textos emergentes (local, empaquetada): cargarla antes de dibujar en el canvas
+  await Promise.race([document.fonts.load('64px "Lilita One"', '¡COMBO x2!'), new Promise((r) => setTimeout(r, 1500))]).catch(() => {});
 
   const app = new Application();
   await app.init({

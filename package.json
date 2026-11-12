@@ -11,6 +11,7 @@
     "icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
+    "@fontsource/lilita-one": "^5.3.0",
     "pixi.js": "^8.23.0"
   },
   "devDependencies": {
