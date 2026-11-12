@@ -196,6 +196,7 @@ const en: Dict = {
   'settings.resetConfirm': 'Are you sure? Coins, skins, levels, achievements and records will be deleted. This cannot be undone.',
   'settings.resetYes': 'Yes, delete everything',
   'settings.cancel': 'Cancel',
+  'settings.madeBy': 'Made by WarriorCrystal',
   'settings.version': 'Version {v}',
   'settings.tutorial': 'Show tutorial',
   'settings.offline': 'Ready to play offline',

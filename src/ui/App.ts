@@ -749,6 +749,7 @@ export class App {
         ),
         this.codeBox(),
         offline,
+        h('p.dim.center', t('settings.madeBy')),
         h('p.dim.center', t('settings.version', { v: VERSION })),
       ),
     );

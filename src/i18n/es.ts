@@ -195,6 +195,7 @@ const es = {
   'settings.resetConfirm': '¿Seguro? Se borrarán monedas, skins, niveles, logros y récords. No se puede deshacer.',
   'settings.resetYes': 'Sí, borrar todo',
   'settings.cancel': 'Cancelar',
+  'settings.madeBy': 'Hecho por WarriorCrystal',
   'settings.version': 'Versión {v}',
   'settings.tutorial': 'Ver tutorial',
   'settings.offline': 'Listo para jugar sin conexión',
