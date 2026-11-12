@@ -362,11 +362,99 @@ const DESIGNS: Record<string, (ctx: Ctx, s: number) => void> = {
 
 /** Nube esponjosa de dibujos animados. */
 function cloud(ctx: Ctx, x: number, y: number, r: number) {
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  for (const [dx, dy, k] of [[0, 0, 1], [r * 0.9, r * 0.2, 0.8], [-r * 0.9, r * 0.25, 0.75], [r * 0.4, -r * 0.45, 0.7]]) {
-    circle(ctx, x + dx, y + dy, r * k);
+  const puffs = [[0, 0, 1], [r * 0.95, r * 0.25, 0.78], [-r * 0.95, r * 0.3, 0.72], [r * 0.4, -r * 0.45, 0.72], [-r * 0.4, -r * 0.3, 0.6]];
+  ctx.fillStyle = 'rgba(190, 225, 245, 0.85)';
+  for (const [dx, dy, k] of puffs) {
+    circle(ctx, x + dx, y + dy + r * 0.12, r * k);
     ctx.fill();
   }
+  ctx.fillStyle = '#ffffff';
+  for (const [dx, dy, k] of puffs) {
+    circle(ctx, x + dx, y + dy, r * k * 0.95);
+    ctx.fill();
+  }
+}
+
+type Material = 'wood' | 'stone' | 'glass';
+
+/** Rellena el trazado `path` con un material de construcción (madera, piedra o vidrio celeste). */
+function materialFill(ctx: Ctx, mat: Material, path: Path2D, x: number, y: number, w: number, h: number, m: number) {
+  ctx.save();
+  if (mat === 'glass') {
+    const g = ctx.createLinearGradient(x, y, x + w, y + h);
+    g.addColorStop(0, 'rgba(200, 240, 255, 0.92)');
+    g.addColorStop(1, 'rgba(110, 200, 240, 0.85)');
+    ctx.fillStyle = g;
+  } else {
+    const base = mat === 'wood' ? '#d49a4c' : '#9aa1aa';
+    const g = ctx.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, shade(base, 0.18));
+    g.addColorStop(1, shade(base, -0.18));
+    ctx.fillStyle = g;
+  }
+  ctx.fill(path);
+  ctx.clip(path);
+  const r = rng(Math.floor(x * 7 + y * 13) + 1);
+  if (mat === 'wood') {
+    ctx.strokeStyle = 'rgba(110, 60, 20, 0.45)';
+    ctx.lineWidth = Math.max(1, m * 0.003);
+    const vertical = h > w;
+    const n = Math.max(2, Math.round((vertical ? w : h) / (m * 0.012)));
+    for (let k = 1; k < n; k++) {
+      const t = k / n + (r() - 0.5) * 0.08;
+      ctx.beginPath();
+      if (vertical) {
+        ctx.moveTo(x + w * t, y);
+        ctx.lineTo(x + w * t + (r() - 0.5) * m * 0.006, y + h);
+      } else {
+        ctx.moveTo(x, y + h * t);
+        ctx.lineTo(x + w, y + h * t + (r() - 0.5) * m * 0.006);
+      }
+      ctx.stroke();
+    }
+  } else if (mat === 'stone') {
+    for (let k = 0; k < Math.max(3, (w * h) / (m * m * 0.0015)); k++) {
+      ctx.fillStyle = rgba(r() > 0.5 ? '#ffffff' : '#2a2e34', 0.12 + r() * 0.1);
+      circle(ctx, x + r() * w, y + r() * h, m * (0.004 + r() * 0.007));
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(40, 44, 50, 0.55)';
+    ctx.lineWidth = Math.max(1, m * 0.003);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x + w * (0.3 + r() * 0.4), y);
+    ctx.lineTo(x + w * (0.2 + r() * 0.6), y + h * 0.35);
+    ctx.lineTo(x + w * (0.3 + r() * 0.4), y + h * 0.6);
+    ctx.stroke();
+  } else {
+    // reflejos diagonales del vidrio
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.lineWidth = Math.max(1.5, Math.min(w, h) * 0.14);
+    ctx.lineCap = 'butt';
+    const d = Math.min(w, h);
+    ctx.beginPath();
+    ctx.moveTo(x + d * 0.25, y + d * 0.95);
+    ctx.lineTo(x + d * 0.95, y + d * 0.25);
+    ctx.stroke();
+    ctx.lineWidth *= 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x + d * 0.55, y + d * 1.15);
+    ctx.lineTo(x + d * 1.15, y + d * 0.55);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.lineWidth = Math.max(1, m * 0.003);
+    ctx.strokeRect(x + m * 0.004, y + m * 0.004, w - m * 0.008, h - m * 0.008);
+  }
+  ctx.restore();
+  ctx.lineWidth = Math.max(1, m * 0.005);
+  ctx.strokeStyle = mat === 'glass' ? '#2a6f98' : INK;
+  ctx.stroke(path);
+}
+
+function materialRect(ctx: Ctx, mat: Material, x: number, y: number, w: number, h: number, m: number) {
+  const p = new Path2D();
+  p.rect(x, y, w, h);
+  materialFill(ctx, mat, p, x, y, w, h, m);
 }
 
 const birds: SkinDef = {
@@ -398,75 +486,171 @@ const birds: SkinDef = {
   explosion: { power: 1.25, ring: '#fff6d8', rings: 1, screenFlash: false },
 
   drawBackground(ctx, w, h) {
-    const sky = ctx.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0, '#5ec2f0');
-    sky.addColorStop(0.7, '#bfeafc');
-    sky.addColorStop(1, '#e6f8ff');
+    const m = Math.min(w, h);
+    const gy = h * 0.93;
+    // cielo con resplandor de sol
+    const sky = ctx.createLinearGradient(0, 0, 0, gy);
+    sky.addColorStop(0, '#3fb0ea');
+    sky.addColorStop(0.55, '#8fd4f4');
+    sky.addColorStop(1, '#e4f6fd');
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, w, h);
-    const m = Math.min(w, h);
-    cloud(ctx, w * 0.15, h * 0.1, m * 0.06);
-    cloud(ctx, w * 0.78, h * 0.06, m * 0.05);
-    cloud(ctx, w * 0.6, h * 0.24, m * 0.04);
-    // colinas lejanas y cercanas
-    const hills = (base: number, amp: number, color: string, phase: number) => {
-      ctx.fillStyle = color;
+    const sun = ctx.createRadialGradient(w * 0.82, h * 0.08, 0, w * 0.82, h * 0.08, m * 0.55);
+    sun.addColorStop(0, 'rgba(255, 250, 215, 0.85)');
+    sun.addColorStop(0.18, 'rgba(255, 244, 190, 0.35)');
+    sun.addColorStop(1, 'rgba(255, 244, 190, 0)');
+    ctx.fillStyle = sun;
+    ctx.fillRect(0, 0, w, h);
+    cloud(ctx, w * 0.16, h * 0.1, m * 0.06);
+    cloud(ctx, w * 0.62, h * 0.05, m * 0.045);
+    cloud(ctx, w * 0.9, h * 0.2, m * 0.04);
+    cloud(ctx, w * 0.36, h * 0.27, m * 0.03);
+
+    // colinas: lejanas azuladas, medias y cercanas
+    const hills = (base: number, amp: number, top: string, bottom: string, phase: number, f = 0.35) => {
+      const y0 = h * base - amp * 1.3;
+      const g = ctx.createLinearGradient(0, y0, 0, gy);
+      g.addColorStop(0, top);
+      g.addColorStop(1, bottom);
+      ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(0, h);
-      for (let x = 0; x <= w; x += 8) ctx.lineTo(x, h * base - Math.sin(x / (m * 0.35) + phase) * amp - Math.sin(x / (m * 0.13) + phase * 2) * amp * 0.25);
+      for (let x = 0; x <= w + 8; x += 6) ctx.lineTo(x, h * base - Math.sin(x / (m * f) + phase) * amp - Math.sin(x / (m * f * 0.37) + phase * 2) * amp * 0.25);
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
     };
-    hills(0.78, m * 0.05, '#9fd6a8', 1);
-    hills(0.86, m * 0.04, '#6cbf4a', 3);
-    // suelo con hierba
-    const gy = h * 0.93;
-    ctx.fillStyle = '#7a5230';
-    ctx.fillRect(0, gy, w, h - gy);
-    ctx.fillStyle = '#5aa82a';
-    ctx.fillRect(0, gy - m * 0.012, w, m * 0.025);
-    ctx.fillStyle = '#4a9020';
-    for (let x = 0; x < w; x += m * 0.02) {
-      ctx.beginPath();
-      ctx.moveTo(x, gy + m * 0.012);
-      ctx.lineTo(x + m * 0.01, gy - m * 0.025);
-      ctx.lineTo(x + m * 0.02, gy + m * 0.012);
+    hills(0.74, m * 0.06, '#b4dfe0', '#cdeee8', 0.4, 0.5);
+    hills(0.8, m * 0.05, '#8fd07a', '#b8e2a0', 1.7);
+    // arbustos redondos en la línea de la colina cercana
+    const r = rng(17);
+    for (let x = -m * 0.02; x < w; x += m * (0.06 + r() * 0.08)) {
+      const by = h * 0.86 - Math.sin(x / (m * 0.3) + 3) * m * 0.035;
+      const br = m * (0.025 + r() * 0.02);
+      ctx.fillStyle = '#4e9e34';
+      circle(ctx, x, by, br);
+      ctx.fill();
+      circle(ctx, x + br * 0.9, by + br * 0.25, br * 0.75);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      circle(ctx, x - br * 0.25, by - br * 0.35, br * 0.4);
       ctx.fill();
     }
-    // tirachinas a la izquierda
-    const sx = w * 0.1;
-    const sh = m * 0.2;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = m * 0.032;
-    const sling = () => {
+    hills(0.86, m * 0.035, '#6cc044', '#58ac30', 3, 0.3);
+
+    // suelo: tierra con piedrecitas y franja de hierba
+    const dirt = ctx.createLinearGradient(0, gy, 0, h);
+    dirt.addColorStop(0, '#8a5c34');
+    dirt.addColorStop(1, '#5e3c1e');
+    ctx.fillStyle = dirt;
+    ctx.fillRect(0, gy, w, h - gy);
+    for (let k = 0; k < Math.ceil(w / (m * 0.05)); k++) {
+      ctx.fillStyle = rgba(r() > 0.5 ? '#c49a6a' : '#3e2612', 0.5);
+      ellipse(ctx, r() * w, gy + m * 0.03 + r() * (h - gy - m * 0.03), m * (0.006 + r() * 0.008), m * (0.004 + r() * 0.005));
+      ctx.fill();
+    }
+    ctx.fillStyle = '#5aa82a';
+    ctx.fillRect(0, gy - m * 0.012, w, m * 0.026);
+    ctx.fillStyle = '#7cc83c';
+    ctx.fillRect(0, gy - m * 0.012, w, m * 0.007);
+    ctx.fillStyle = '#4a9020';
+    for (let x = 0; x < w; x += m * 0.018) {
+      const t = m * (0.018 + r() * 0.014);
       ctx.beginPath();
-      ctx.moveTo(sx, gy);
-      ctx.lineTo(sx, gy - sh * 0.55);
-      ctx.lineTo(sx - sh * 0.18, gy - sh);
-      ctx.moveTo(sx, gy - sh * 0.55);
-      ctx.lineTo(sx + sh * 0.18, gy - sh);
+      ctx.moveTo(x, gy + m * 0.013);
+      ctx.lineTo(x + m * 0.009, gy - t);
+      ctx.lineTo(x + m * 0.018, gy + m * 0.013);
+      ctx.fill();
+    }
+
+    // tirachinas a la izquierda, con goma negra
+    const sx = w * 0.1;
+    const sh = m * 0.22;
+    const tipL = [sx - sh * 0.2, gy - sh];
+    const tipR = [sx + sh * 0.2, gy - sh];
+    const pouch = [sx + sh * 0.03, gy - sh * 0.7];
+    const band = (a: number[]) => {
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#121214';
+      ctx.lineWidth = m * 0.016;
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1] + m * 0.006);
+      ctx.quadraticCurveTo((a[0] + pouch[0]) / 2, pouch[1] + m * 0.006, pouch[0], pouch[1]);
       ctx.stroke();
     };
-    sling();
-    ctx.strokeStyle = '#8a5a2a';
-    ctx.lineWidth = m * 0.02;
-    sling();
-    // torre de madera con un cerdito a la derecha
-    const tx = w * 0.88;
-    const bw = m * 0.08;
-    ctx.lineWidth = m * 0.006;
-    ctx.strokeStyle = INK;
-    for (const [x, y, ww, hh] of [[tx - bw, gy - bw * 1.6, bw * 0.3, bw * 1.6], [tx + bw * 0.7, gy - bw * 1.6, bw * 0.3, bw * 1.6], [tx - bw * 1.1, gy - bw * 1.85, bw * 2.2, bw * 0.25]]) {
-      ctx.fillStyle = '#d29a4e';
-      ctx.fillRect(x, y, ww, hh);
-      ctx.strokeRect(x, y, ww, hh);
+    band(tipL); // goma trasera, detrás de la horquilla
+    const fork = (c: string, lw: number) => {
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = c;
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.moveTo(sx, gy + m * 0.005);
+      ctx.lineTo(sx, gy - sh * 0.55);
+      ctx.quadraticCurveTo(sx - sh * 0.17, gy - sh * 0.68, tipL[0], tipL[1]);
+      ctx.moveTo(sx, gy - sh * 0.55);
+      ctx.quadraticCurveTo(sx + sh * 0.17, gy - sh * 0.68, tipR[0], tipR[1]);
+      ctx.stroke();
+    };
+    fork(INK, m * 0.036);
+    fork('#9a6430', m * 0.024);
+    ctx.save();
+    ctx.translate(-m * 0.004, -m * 0.003);
+    fork('rgba(255, 210, 150, 0.35)', m * 0.007);
+    ctx.restore();
+    // ataduras negras en las puntas
+    ctx.fillStyle = '#121214';
+    for (const [x, y] of [tipL, tipR]) {
+      roundRect(ctx, x - m * 0.016, y + m * 0.004, m * 0.032, m * 0.016, m * 0.005);
+      ctx.fill();
     }
-    circle(ctx, tx, gy - bw * 0.45, bw * 0.45);
-    ctx.fillStyle = PIG;
-    ctx.fill();
-    ctx.stroke();
+    band(tipR); // goma delantera
+
+    // estructura de madera, piedra y vidrio a la derecha
+    const u = m * 0.058;
+    const x0 = w - m * 0.03 - u * 6.2;
+    ctx.lineJoin = 'round';
+    const at = (x: number, y: number) => [x0 + x * u, gy - y * u];
+    const piece = (mat: 'wood' | 'stone' | 'glass', x: number, y: number, ww: number, hh: number) => {
+      const [px, py] = at(x, y + hh);
+      materialRect(ctx, mat, px, py, ww * u, hh * u, m);
+    };
+    piece('stone', -0.1, 0, 6.4, 0.6);
+    piece('wood', 0.15, 0.6, 0.55, 2.4);
+    piece('glass', 2.7, 0.6, 0.6, 2.4);
+    piece('wood', 5.3, 0.6, 0.55, 2.4);
+    piece('glass', 0.9, 0.6, 1.5, 0.75);
+    piece('stone', 3.6, 0.6, 1.4, 1.4);
+    piece('wood', -0.2, 3.0, 6.6, 0.42);
+    piece('glass', 0.7, 3.42, 0.5, 2.1);
+    piece('stone', 2.3, 3.42, 1.4, 1.0);
+    piece('glass', 2.5, 4.42, 1.0, 1.1);
+    piece('glass', 4.8, 3.42, 0.5, 2.1);
+    piece('wood', 0.4, 5.52, 5.2, 0.42);
+    piece('wood', 1.2, 5.94, 0.45, 1.3);
+    piece('wood', 4.35, 5.94, 0.45, 1.3);
+    piece('glass', 2.25, 5.94, 1.5, 0.6);
+    // tejado triangular de piedra
+    const [ax, ay] = at(0.9, 7.24);
+    const [bx, by] = at(3, 9.2);
+    const [cx] = at(5.1, 7.24);
+    const roof = new Path2D();
+    roof.moveTo(ax, ay);
+    roof.lineTo(bx, by);
+    roof.lineTo(cx, ay);
+    roof.closePath();
+    materialFill(ctx, 'stone', roof, ax, by, cx - ax, ay - by, m);
+    // tablón suelto y roca a los pies
+    ctx.save();
+    const [lx, ly] = at(-1.6, 0);
+    ctx.translate(lx, ly);
+    ctx.rotate(-1.1);
+    materialRect(ctx, 'wood', 0, -u * 0.4, u * 3, u * 0.4, m);
+    ctx.restore();
+    const [rx, ry] = at(-0.7, 0.45);
+    const rock = new Path2D();
+    rock.arc(rx, ry, u * 0.5, 0, Math.PI * 2);
+    materialFill(ctx, 'stone', rock, rx - u * 0.5, ry - u * 0.5, u, u, m);
   },
 
   drawBoard(ctx, size, cell) {
@@ -570,8 +754,8 @@ const birds: SkinDef = {
     };
     draw(INK, 0.14);
     draw('#a8682a', 0.08);
-    ctx.strokeStyle = '#3a2210';
-    ctx.lineWidth = s * 0.035;
+    ctx.strokeStyle = '#121214';
+    ctx.lineWidth = s * 0.045;
     ctx.beginPath();
     ctx.moveTo(s * 0.3, s * 0.22);
     ctx.quadraticCurveTo(s / 2, s * 0.42, s * 0.7, s * 0.22);
