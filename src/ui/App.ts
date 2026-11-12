@@ -470,7 +470,7 @@ export class App {
 
   private renderShop(): HTMLElement {
     const grid = h('div.shop-grid');
-    for (const s of SKINS) {
+    for (const s of [...SKINS].sort((a, b) => a.price - b.price)) {
       const owned = this.d.ownedSkins.includes(s.id);
       const equipped = this.d.skin === s.id;
       let action: HTMLElement;
