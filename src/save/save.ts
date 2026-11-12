@@ -31,6 +31,8 @@ export interface SaveData {
   };
   login: { lastDate: string | null; streak: number };
   levels: Record<string, { stars: number; best: number }>;
+  /** Capítulos de la historia de Aventura ya leídos ('i0'…'i4', 'end'). */
+  story: string[];
   stats: {
     games: number;
     lines: number;
@@ -57,6 +59,7 @@ export function defaults(): SaveData {
     versus: { difficulty: 'medium', played: 0, wins: { easy: 0, medium: 0, hard: 0 }, streak: 0, bestStreak: 0 },
     login: { lastDate: null, streak: 0 },
     levels: {},
+    story: [],
     stats: { games: 0, lines: 0, pieces: 0, bestCombo: 0, perfect: 0, coinsEarned: 0, maxLinesAtOnce: 0, zenMoves: 0, skinsBought: 0 },
     achievements: {},
   };

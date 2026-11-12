@@ -321,6 +321,87 @@ button:focus-visible, .code-input:focus-visible, .switch input:focus-visible + i
 .node-stars .on { color: var(--gold); }
 .map-node.locked .node-stars { display: none; }
 
+/* ---------- aventura: archipiélago ---------- */
+.map-scroll { border-radius: var(--r-lg); }
+.map {
+  overflow: hidden;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='70'%3E%3Cpath d='M10 20q8-6 16 0t16 0M70 52q8-6 16 0t16 0' stroke='white' stroke-opacity='.16' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #8fd3f5 0, #3fa6d8 130px, #2386c4 40%, #1a74b4 100%);
+}
+.island {
+  position: absolute; left: 5%; width: 90%;
+  background: radial-gradient(circle, rgba(0,0,0,.07) 0 1.6px, transparent 2.2px) 0 0 / 34px 30px, radial-gradient(circle, rgba(255,255,255,.22) 0 1.4px, transparent 2px) 17px 15px / 34px 30px, var(--ground);
+  border: 9px solid var(--edge);
+  box-shadow: 0 0 0 7px rgba(255,255,255,.28), 0 0 0 16px rgba(255,255,255,.1), inset 0 -10px 0 rgba(0,0,0,.08);
+  border-radius: 46% 54% 42% 58% / 9% 12% 10% 13%;
+  transition: filter .3s;
+}
+.island.s1 { border-radius: 58% 42% 55% 45% / 12% 9% 13% 10%; left: 6%; }
+.island.s2 { border-radius: 40% 60% 48% 52% / 10% 13% 9% 12%; left: 4%; }
+.island.t-beach { --ground: #f4d68e; --edge: #fbe9b6; }
+.island.t-jungle { --ground: #43a95a; --edge: #ecd391; }
+.island.t-snow { --ground: #eaf4fb; --edge: #bcd8ec; }
+.island.t-volcano { --ground: #5e4848; --edge: #8a5d3d; }
+.island.t-sky { --ground: #d9d3fb; --edge: #ffffff; box-shadow: 0 0 0 10px rgba(255,255,255,.55), 0 0 0 22px rgba(255,255,255,.22), 0 18px 0 rgba(0,0,0,.08); }
+.island.locked, .deco.locked { filter: grayscale(.75) brightness(.82); }
+.map-deco { position: absolute; inset: 0; pointer-events: none; }
+.deco { position: absolute; transform: translate(-50%, -62%); display: block; }
+.deco svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.map .map-path path { stroke: rgba(255,255,255,.85); stroke-width: 4; stroke-dasharray: 1 11; }
+.deco.bob { animation: bob 3.2s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translate(-50%, -66%) rotate(-4deg); } }
+.deco.drift { animation: drift 9s ease-in-out infinite; }
+.deco.drift.slow { animation-duration: 13s; }
+@keyframes drift { 50% { transform: translate(-38%, -62%); } }
+.deco .smoke { animation: smoke 2.8s ease-in-out infinite; transform-origin: 24px 12px; }
+@keyframes smoke { 50% { transform: translateY(-3px) scale(1.08); opacity: .8; } }
+.deco .wave-flag { animation: flag 1.6s ease-in-out infinite; transform-origin: 19px 14px; }
+@keyframes flag { 50% { transform: scaleX(.86) skewY(-4deg); } }
+.map-node { z-index: 1; border: 3px solid #fff; }
+.map-node.cleared { border: 3px solid var(--accent); }
+.map-node.locked { background: rgba(255,255,255,.72); color: #5b6a78; border: 3px solid rgba(255,255,255,.9); }
+.node-stars { color: rgba(0,0,0,.28); filter: drop-shadow(0 1px 0 rgba(255,255,255,.7)); }
+.isle-sign {
+  position: absolute; left: 50%; transform: translate(-50%, -50%); z-index: 2;
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; max-width: 86%;
+  background: linear-gradient(#b77a45, #9b6235); color: #fff6e6; border: 2px solid #6e3f1d; border-radius: 12px;
+  box-shadow: 0 4px 0 #5a3216, 0 8px 18px rgba(0,0,0,.3); font: inherit; text-align: left; cursor: pointer;
+}
+.isle-sign:active { transform: translate(-50%, calc(-50% + 3px)); box-shadow: 0 1px 0 #5a3216, 0 4px 10px rgba(0,0,0,.3); }
+.isle-sign.locked { filter: grayscale(.6) brightness(.85); cursor: default; }
+.isle-sign .ico { width: 22px; height: 22px; }
+.isle-txt { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.isle-txt small { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .75; }
+.isle-txt b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.isle-stars { display: flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; padding-left: 8px; border-left: 1px solid rgba(255,255,255,.3); font-variant-numeric: tabular-nums; }
+.isle-stars .ico { width: 14px; height: 14px; color: var(--gold); }
+.isle-gem { width: 26px; height: 26px; flex: none; filter: grayscale(1) brightness(.75); opacity: .7; }
+.isle-gem.got { filter: drop-shadow(0 0 6px rgba(70,224,255,.8)); opacity: 1; }
+.isle-gem svg { width: 100%; height: 100%; display: block; }
+
+/* tarjeta de historia */
+.story-card { text-align: center; padding-top: 0; overflow: hidden; }
+.story-card p { color: var(--text); opacity: .9; margin: 6px 0 18px; }
+.story-card .btn { width: 100%; }
+.story-art {
+  position: relative; height: 150px; margin: 0 -24px 14px; display: grid; place-items: center;
+  background: radial-gradient(ellipse 70% 38% at 50% 100%, var(--ground) 0 98%, transparent 100%), linear-gradient(180deg, #8fd3f5, #2f97cf 70%);
+  box-shadow: inset 0 -12px 0 rgba(255,255,255,.12);
+}
+.story-art .deco { position: relative; transform: none; width: 112px; height: 112px; margin-top: 10px; animation: popIn .5s var(--ease) .15s both; }
+.story-card.t-beach { --ground: #f4d68e; }
+.story-card.t-jungle { --ground: #43a95a; }
+.story-card.t-snow { --ground: #eaf4fb; }
+.story-card.t-volcano { --ground: #5e4848; }
+.story-card.t-volcano .story-art { background: radial-gradient(ellipse 70% 38% at 50% 100%, var(--ground) 0 98%, transparent 100%), linear-gradient(180deg, #ffb074, #c2513a 75%); }
+.story-card.t-sky { --ground: #ffffff; }
+.story-card.t-sky .story-art { background: radial-gradient(ellipse 70% 38% at 50% 100%, var(--ground) 0 98%, transparent 100%), linear-gradient(180deg, #d6ccff, #8a7de8 75%); }
+.story-card.t-end { --ground: #fbe9b6; }
+.story-card.t-end .story-art { background: radial-gradient(circle at 50% 55%, rgba(255,255,255,.75), transparent 45%), radial-gradient(ellipse 70% 38% at 50% 100%, var(--ground) 0 98%, transparent 100%), linear-gradient(180deg, #ffe48a, #ff9f5a 75%); }
+body.pixel .isle-sign, body.pixel .island { border-radius: 0; }
+@media (prefers-reduced-motion: reduce) { .deco, .deco * { animation: none !important; } }
+
 /* ---------- tienda ---------- */
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .skin-card {

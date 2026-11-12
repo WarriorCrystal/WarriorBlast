@@ -2,8 +2,9 @@ import { audio, haptics } from '../audio/audio';
 import type { Goal, LevelDef } from '../core/level';
 import type { ModeId } from '../core/session';
 import { DIFFICULTIES, DIFFICULTY_IDS, type Difficulty } from '../core/versus';
-import { LANGS, fmt, getLang, setLang, t, type LangCode } from '../i18n';
+import { LANGS, fmt, getLang, setLang, t, type LangCode, type TKey } from '../i18n';
 import { randomTagline } from '../i18n/taglines';
+import { ISLANDS, THEME_DECOR, decorSvg, islandOf, type IslandDef } from '../levels/islands';
 import { LEVELS } from '../levels/levels';
 import { lookupCode } from '../meta/codes';
 import { ACHIEVEMENTS, levelsDone, totalStars, type AchievementDef, type Progress } from '../meta/progress';
@@ -339,27 +340,83 @@ export class App {
   private renderAdventure(): HTMLElement {
     const unlocked = this.progress.unlockedLevel();
     const map = h('div.map');
-    const n = LEVELS.length;
-    const stepY = 96;
-    const H = n * stepY + 60;
+    const deco = h('div.map-deco');
+    const stepY = 96; // distancia entre niveles dentro de una isla
+    const pad = 70; // tierra arriba y abajo de los niveles de una isla
+    const gap = 150; // mar entre islas
+    const top = 130;
+    const bottom = 40;
+    let H = top + bottom;
+    ISLANDS.forEach((is, k) => (H += (is.levels.length - 1) * stepY + pad * 2 + (k ? gap : 0)));
     map.style.height = `${H}px`;
-    const pts: Array<[number, number]> = [];
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('class', 'map-path');
-    svg.setAttribute('viewBox', `0 0 100 ${H}`);
-    svg.setAttribute('preserveAspectRatio', 'none');
-    LEVELS.forEach((lv, i) => {
-      // nivel 1 abajo: se "sube" por el mapa
-      const y = H - 60 - i * stepY;
-      const x = 50 + Math.sin(i * 0.85) * 30;
-      pts.push([x, y]);
+    const nodeX = (i: number) => 50 + Math.sin(i * 0.85) * 30;
+    const nodeY = new Map<number, number>();
+    const place = (name: string, x: number, y: number, size: number, cls = '') => {
+      deco.appendChild(
+        h(`span.deco.d-${name}${cls}`, {
+          html: decorSvg(name),
+          style: { left: `${x}%`, top: `${y}px`, width: `${size}px`, height: `${size}px` },
+        }),
+      );
+    };
+    const isleStars = (is: IslandDef) => is.levels.reduce((a, id) => a + (this.d.levels[String(id)]?.stars ?? 0), 0);
+    const signs: HTMLElement[] = [];
+    let cursor = H - bottom; // borde inferior de la isla en curso
+    ISLANDS.forEach((is, k) => {
+      const bottomY = cursor;
+      const topY = bottomY - pad * 2 - (is.levels.length - 1) * stepY;
+      const locked = is.levels[0] > unlocked;
+      const lockCls = locked ? '.locked' : '';
+      map.appendChild(h(`div.island.t-${is.theme}.s${k % 3}${lockCls}`, { style: { top: `${topY}px`, height: `${bottomY - topY}px` } }));
+      const { small, landmark } = THEME_DECOR[is.theme];
+      is.levels.forEach((id, j) => {
+        const i = id - 1;
+        const y = bottomY - pad - j * stepY;
+        nodeY.set(id, y);
+        const x = nodeX(i);
+        const jitter = ((i * 37) % 9) - 4;
+        const dx = x < 50 ? 76 + jitter : 24 - jitter;
+        if (j === is.levels.length - 1) place(landmark, dx, y - 14, 78, `.landmark${lockCls}`);
+        else place(small[j % small.length], dx, y + 6, 50, lockCls);
+      });
+      // cartel con el nombre de la isla, en su orilla de abajo
+      const done = is.levels.every((id) => (this.d.levels[String(id)]?.stars ?? 0) > 0);
+      signs.push(
+        h(
+          `button.isle-sign.t-${is.theme}${lockCls}`,
+          {
+            style: { top: `${bottomY - 6}px` },
+            onclick: () => {
+              if (locked) return haptics.vibrate(20);
+              audio.play('click');
+              this.showStory(`i${is.idx}`);
+            },
+          },
+          locked ? icon('lock') : h(`span.isle-gem${done ? '.got' : ''}`, { html: decorSvg('gems') }),
+          h('span.isle-txt', h('small', t('island.count', { n: k + 1, t: ISLANDS.length })), h('b', t(`island.${is.idx}.name` as TKey))),
+          locked ? null : h('span.isle-stars', icon('star', 'on'), `${isleStars(is)}/${is.levels.length * 3}`),
+        ),
+      );
+      // mar entre esta isla y la siguiente: olas y un barquito
+      if (k < ISLANDS.length - 1) {
+        const midY = topY - gap / 2;
+        place('boat', k % 2 ? 14 : 86, midY - 4, 50, '.bob');
+        place('wave', k % 2 ? 72 : 28, midY + 20, 40);
+        place('wave', k % 2 ? 40 : 60, midY - 38, 34);
+      }
+      cursor = topY - gap;
+    });
+    // cielo de arriba del todo
+    place('cloud', 22, 44, 62, '.drift');
+    place('cloud', 76, 84, 46, '.drift.slow');
+
+    const nodes = LEVELS.map((lv, i) => {
       const st = this.d.levels[String(lv.id)]?.stars ?? 0;
       const locked = lv.id > unlocked;
-      const node = h(
+      return h(
         `button.map-node${locked ? '.locked' : ''}${lv.id === unlocked && !st ? '.current' : ''}${st ? '.cleared' : ''}`,
         {
-          style: { left: `${x}%`, top: `${y}px` },
+          style: { left: `${nodeX(i)}%`, top: `${nodeY.get(lv.id) ?? 0}px` },
           onclick: () => {
             if (locked) {
               haptics.vibrate(20);
@@ -372,14 +429,22 @@ export class App {
         locked ? icon('lock') : h('b', String(lv.id)),
         h('div.node-stars', ...[1, 2, 3].map((k) => icon('star', k <= st ? 'on' : ''))),
       );
-      map.appendChild(node);
     });
+    // camino punteado entre niveles (cruza el mar de isla en isla)
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'map-path');
+    svg.setAttribute('viewBox', `0 0 100 ${H}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
     const path = document.createElementNS(svgNS, 'path');
     let dPath = '';
-    pts.forEach(([x, y], i) => {
+    LEVELS.forEach((lv, i) => {
+      const x = nodeX(i);
+      const y = nodeY.get(lv.id) ?? 0;
       if (i === 0) dPath += `M${x} ${y}`;
       else {
-        const [px, py] = pts[i - 1];
+        const px = nodeX(i - 1);
+        const py = nodeY.get(LEVELS[i - 1].id) ?? 0;
         const my = (py + y) / 2;
         dPath += ` C${px} ${my} ${x} ${my} ${x} ${y}`;
       }
@@ -387,7 +452,8 @@ export class App {
     path.setAttribute('d', dPath);
     path.setAttribute('vector-effect', 'non-scaling-stroke');
     svg.appendChild(path);
-    map.prepend(svg);
+    map.append(deco, svg, ...nodes, ...signs);
+
     const scroller = h('div.map-scroll', map);
     const screen = h(
       'div.screen.menu.adventure',
@@ -395,11 +461,39 @@ export class App {
       h('div.adv-summary', icon('star', 'on'), `${totalStars(this.d)}/${LEVELS.length * 3}`, h('span.dim', ` · ${levelsDone(this.d)}/${LEVELS.length}`)),
       scroller,
     );
+    const curLevel = Math.min(unlocked, LEVELS.length);
     requestAnimationFrame(() => {
-      const target = H - 60 - (unlocked - 1) * stepY;
-      scroller.scrollTop = target - scroller.clientHeight / 2;
+      scroller.scrollTop = (nodeY.get(curLevel) ?? H) - scroller.clientHeight / 2;
     });
+    // capítulo de historia pendiente: la isla en curso y, al terminar todo, el final
+    const chapters = [`i${islandOf(curLevel).idx}`];
+    if (levelsDone(this.d) >= LEVELS.length) chapters.push('end');
+    const pending = chapters.find((c) => !this.d.story.includes(c));
+    if (pending) setTimeout(() => this.current === 'adventure' && !this.modalStack.length && this.showStory(pending), 380);
     return screen;
+  }
+
+  /** Muestra un capítulo de la historia ('i0'…'i4' o 'end') y lo marca como leído. */
+  private showStory(chapter: string) {
+    if (!this.d.story.includes(chapter)) {
+      this.d.story.push(chapter);
+      this.store.save();
+    }
+    const isEnd = chapter === 'end';
+    const is = isEnd ? ISLANDS[ISLANDS.length - 1] : ISLANDS[Number(chapter.slice(1))];
+    const art = isEnd ? 'gems' : THEME_DECOR[is.theme].landmark;
+    const close = this.modal(
+      h(
+        `div.panel.story-card.t-${isEnd ? 'end' : is.theme}`,
+        h('div.story-art', h(`span.deco.d-${art}`, { html: decorSvg(art) })),
+        h('div.upper.dim.center', isEnd ? t('island.story') : t('island.count', { n: is.idx + 1, t: ISLANDS.length })),
+        h('h2', isEnd ? t('island.end.title') : t(`island.${is.idx}.name` as TKey)),
+        h('p', isEnd ? t('island.end.story') : t(`island.${is.idx}.story` as TKey)),
+        this.btn(t(isEnd ? 'island.end.go' : 'island.go'), () => close(), 'primary'),
+      ),
+      true,
+    );
+    if (isEnd) audio.play('unlock');
   }
 
   private goalText(g: Goal): string {
@@ -431,6 +525,7 @@ export class App {
     const close = this.modal(
       h(
         'div.panel.level-intro',
+        h('div.upper.dim.center', t(`island.${islandOf(lv.id).idx}.name` as TKey)),
         h('h2', t('level.title', { n: lv.id })),
         h('div.big-stars', ...[1, 2, 3].map((k) => icon('star', k <= st ? 'on' : ''))),
         h('h3', t('level.goals')),
