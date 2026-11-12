@@ -83,6 +83,76 @@ export function icon(name: keyof typeof P | string, cls = ''): HTMLElement {
   return span;
 }
 
+/**
+ * Insignias ilustradas de los modos del menú. Usan el color del modo (--mc, que sale de la skin)
+ * para el fondo y tonos derivados para el contorno, así combinan con cualquier tema.
+ */
+const INK = 'color-mix(in srgb, var(--mc) 30%, #140c2a)';
+const S = (fill: string, extra = '') => `style="fill:${fill};stroke:${INK};stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round${extra}"`;
+const MODE_ART: Record<string, string> = {
+  adventure:
+    `<path d="M8 14l11-4 10 4 11-4v26l-11 4-10-4-11 4z" ${S('#fff6e0')}/>` +
+    `<path d="M19 10l10 4v26l-10-4z" style="fill:#ecd5a4"/>` +
+    `<path d="M8 14l11-4 10 4 11-4v26l-11 4-10-4-11 4z" style="fill:none;stroke:${INK};stroke-width:1.6;stroke-linejoin:round"/>` +
+    `<path d="M12.5 33c3-5 7.5-1.5 10-6.5s6-6 9-7" style="fill:none;stroke:${INK};stroke-width:1.8;stroke-linecap:round;stroke-dasharray:2.4 2.6"/>` +
+    `<circle cx="12.5" cy="33" r="2" style="fill:${INK}"/>` +
+    `<path d="M34 27c-4.2-4.8-6.2-7.4-6.2-10a6.2 6.2 0 0 1 12.4 0c0 2.6-2 5.2-6.2 10z" ${S('#ff4d5e')}/>` +
+    `<circle cx="34" cy="16.8" r="2.3" style="fill:#fff"/>`,
+  timeattack:
+    `<rect x="20.5" y="6.5" width="7" height="5" rx="1.6" ${S('#ffd23f')}/>` +
+    `<path d="M34.5 12.5l3 3" style="stroke:${INK};stroke-width:3.4;stroke-linecap:round"/>` +
+    `<circle cx="24" cy="27" r="14" ${S('#fff')}/>` +
+    `<path d="M24 27V15.5a11.5 11.5 0 0 1 10.3 6.4z" style="fill:color-mix(in srgb, var(--mc) 55%, #fff)"/>` +
+    `<path d="M24 15.5v2.5M35.5 27h-2.5M24 38.5V36M12.5 27H15" style="stroke:${INK};stroke-width:1.8;stroke-linecap:round"/>` +
+    `<path d="M24 27l6.5-7" style="stroke:#ff4d5e;stroke-width:2.6;stroke-linecap:round"/>` +
+    `<circle cx="24" cy="27" r="2.3" style="fill:${INK}"/>`,
+  versus: (() => {
+    const sword =
+      `<path d="M22 7h4v22h-4z M22 7l2-3 2 3" ${S('#f4f7ff')}/>` +
+      `<path d="M24 7v21" style="stroke:#c3cbe6;stroke-width:1.2"/>` +
+      `<rect x="16" y="28.5" width="16" height="4" rx="2" ${S('#ffcc33')}/>` +
+      `<rect x="22.3" y="32.5" width="3.4" height="7" rx="1" ${S('#8a5427')}/>` +
+      `<circle cx="24" cy="41.5" r="2.4" ${S('#ffcc33')}/>`;
+    return (
+      `<g transform="rotate(-42 24 25)">${sword}</g><g transform="rotate(42 24 25)">${sword}</g>` +
+      `<path d="M24 14.5l1.6 3.4 3.6.4-2.7 2.4.8 3.6-3.3-1.9-3.3 1.9.8-3.6-2.7-2.4 3.6-.4z" style="fill:#fff59a;stroke:${INK};stroke-width:1.2;stroke-linejoin:round"/>`
+    );
+  })(),
+  zen:
+    `<circle cx="34" cy="13" r="4" style="fill:#fff3b0;opacity:.9"/>` +
+    `<path d="M24 34c-8 0-13.5-5.5-14-13 6.5 0 12 4.5 14 13z" ${S('color-mix(in srgb, var(--mc) 35%, #fff)')}/>` +
+    `<path d="M24 34c8 0 13.5-5.5 14-13-6.5 0-12 4.5-14 13z" ${S('color-mix(in srgb, var(--mc) 35%, #fff)')}/>` +
+    `<path d="M24 11c5 5 6 16 0 23-6-7-5-18 0-23z" ${S('#fff')}/>` +
+    `<path d="M24 16v14" style="stroke:color-mix(in srgb, var(--mc) 45%, #fff);stroke-width:1.4;stroke-linecap:round"/>` +
+    `<path d="M9 39c3-2 6-2 9 0s6 2 9 0 6-2 9 0 3 1 3 1" style="fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;opacity:.85"/>`,
+  cascade: (() => {
+    const blk = (x: number, y: number, c: string) =>
+      `<rect x="${x}" y="${y}" width="9" height="9" rx="2" ${S(c)}/><rect x="${x + 2}" y="${y + 1.8}" width="5" height="1.8" rx=".9" style="fill:#fff;opacity:.55"/>`;
+    return (
+      `<path d="M21 4.5v5M24.5 3v6.5M28 4.5v5" style="stroke:#fff;stroke-width:1.8;stroke-linecap:round;opacity:.8"/>` +
+      blk(19.5, 11.5, 'var(--c7)') +
+      blk(9, 30, 'var(--c1)') + blk(19.5, 30, 'var(--c2)') + blk(30, 30, 'var(--c3)') + blk(30, 20, 'var(--c6)')
+    );
+  })(),
+};
+
+/** Insignia ilustrada de un modo (48×48) con fondo degradado y brillo. */
+export function modeArt(mode: string): HTMLElement {
+  const span = document.createElement('span');
+  span.className = 'mode-art';
+  const id = `ma-${mode}`;
+  span.innerHTML =
+    `<svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" style="stop-color:color-mix(in srgb, var(--mc) 72%, #fff)"/>` +
+    `<stop offset="1" style="stop-color:color-mix(in srgb, var(--mc) 78%, #000)"/></linearGradient></defs>` +
+    `<rect class="ma-bg" x="1" y="1" width="46" height="46" rx="13" fill="url(#${id})"/>` +
+    `<path class="ma-gloss" d="M3 14C3 7 7 3 14 3h20c7 0 11 4 11 11-7-3-14-4.5-21-4.5S10 11 3 14z" fill="#fff" opacity=".22"/>` +
+    `<rect class="ma-bg" x="1.5" y="1.5" width="45" height="45" rx="12.5" fill="none" stroke="#000" stroke-opacity=".18"/>` +
+    (MODE_ART[mode] ?? '') +
+    '</svg>';
+  return span;
+}
+
 /** Moneda dibujada (no emoji, para que se vea igual en todos los móviles). */
 export function coinIcon(cls = ''): HTMLElement {
   const span = document.createElement('span');

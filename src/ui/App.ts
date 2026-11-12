@@ -14,7 +14,7 @@ import { SKINS, getSkin } from '../skins';
 import type { SkinDef } from '../skins/types';
 import { CascadeController } from './CascadeController';
 import { GameController, type EndInfo } from './GameController';
-import { clearEl, coinIcon, countUp, h, icon } from './dom';
+import { clearEl, coinIcon, countUp, h, icon, modeArt } from './dom';
 
 type ScreenName = 'home' | 'adventure' | 'shop' | 'achievements' | 'stats' | 'settings' | 'game';
 
@@ -265,7 +265,7 @@ export class App {
 
   private renderHome(): HTMLElement {
     const d = this.d;
-    const card = (mode: ModeId, ic: string, metaIc: string, meta: string, cls = '') =>
+    const card = (mode: ModeId, metaIc: string, meta: string, cls = '') =>
       h(
         `button.mode-card.m-${mode}${cls ? '.' + cls : ''}`,
         {
@@ -277,7 +277,7 @@ export class App {
             else this.startGame(mode);
           },
         },
-        h('div.mc-head', h('div.mc-icon', icon(ic)), h('div.mc-meta', icon(metaIc), h('span', meta))),
+        h('div.mc-head', h('div.mc-icon.art', modeArt(mode)), h('div.mc-meta', icon(metaIc), h('span', meta))),
         h('div.mc-text', h('div.mc-title', t(`mode.${mode}` as never)), h('div.mc-desc', t(`mode.${mode}.desc` as never))),
       );
     const vsWins = d.versus.wins.easy + d.versus.wins.medium + d.versus.wins.hard;
@@ -301,11 +301,11 @@ export class App {
         ),
         h(
           'div.mode-grid',
-          card('adventure', 'map', 'star', `${stars}/${LEVELS.length * 3}`, 'adv'),
-          card('timeattack', 'clock', 'trophy', fmt(d.best.timeattack)),
-          card('versus', 'swords', 'trophy', fmt(vsWins)),
-          card('zen', 'leaf', 'trophy', fmt(d.best.zen)),
-          card('cascade', 'cascade', 'trophy', fmt(d.best.cascade), 'wide'),
+          card('adventure', 'star', `${stars}/${LEVELS.length * 3}`, 'adv'),
+          card('timeattack', 'trophy', fmt(d.best.timeattack)),
+          card('versus', 'trophy', fmt(vsWins)),
+          card('zen', 'trophy', fmt(d.best.zen)),
+          card('cascade', 'trophy', fmt(d.best.cascade), 'wide'),
         ),
       ),
       h(
