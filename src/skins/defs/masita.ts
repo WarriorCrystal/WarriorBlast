@@ -325,8 +325,8 @@ const masita: SkinDef = {
   id: 'masita',
   name: { es: 'Masita', en: 'Masita' },
   description: {
-    es: 'Una gata blanca de ojos azules, patitas rosas y pelaje suavecito.',
-    en: 'A white cat with blue eyes, pink paws and the softest fur.',
+    es: 'Mi hija',
+    en: 'My daughter',
   },
   price: 2000,
   order: 4,
