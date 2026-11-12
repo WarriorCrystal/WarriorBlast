@@ -119,6 +119,8 @@ export interface SkinDef {
   price: number;
   /** Orden en la tienda. */
   order: number;
+  /** Desactivada: el archivo se conserva pero la skin no aparece en la tienda ni se puede usar. */
+  disabled?: boolean;
   /** 7 colores de bloque + 1 color "piedra" (índice 8 del tablero). */
   blocks: [string, string, string, string, string, string, string, string];
   ui: SkinUi;

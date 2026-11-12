@@ -117,7 +117,7 @@ for (const scene of all) {
     await shot('game-over');
   }
   if (scene === 'skins') {
-    for (const skin of (process.env.SKINS ? process.env.SKINS.split(',') : ['neon', 'pastel', 'pixel', 'blockworld', 'gems', 'dinos', 'testlab', 'glass', 'bricks', 'masita', 'fastfood', 'boca', 'space', 'ocean', 'candy', 'fruits', 'gameboy', 'casino'])) {
+    for (const skin of (process.env.SKINS ? process.env.SKINS.split(',') : ['neon', 'pastel', 'pixel', 'blockworld', 'gems', 'dinos', 'testlab', 'glass', 'bricks', 'masita', 'fastfood', 'boca', 'ocean', 'candy', 'fruits', 'gameboy', 'casino'])) {
       await boot(baseSave({ skin, ownedSkins: ['neon', skin] }));
       await page.evaluate(() => window.__wb.game.startGame('adventure', 10));
       await wait(1200);

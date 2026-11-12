@@ -386,6 +386,8 @@ const space: SkinDef = {
   },
   price: 1300,
   order: 5,
+  // Desactivada por ahora (se conserva para más adelante).
+  disabled: true,
   blocks: [C.mars, C.gas, C.sun, C.earth, C.ice, C.rings, C.nebula, C.stone],
   ui: {
     bg: '#0a0820',

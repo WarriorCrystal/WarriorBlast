@@ -8,7 +8,7 @@ const modules = import.meta.glob<{ default: SkinDef }>('./defs/*.ts', { eager: t
 
 export const SKINS: SkinDef[] = Object.values(modules)
   .map((m) => m.default)
-  .filter((s) => validateSkin(s))
+  .filter((s) => validateSkin(s) && !s.disabled)
   .sort((a, b) => a.order - b.order);
 
 export const DEFAULT_SKIN = 'neon';

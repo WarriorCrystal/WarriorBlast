@@ -4,8 +4,8 @@ import type { Ctx, SkinDef } from '../types';
 
 /**
  * OCÉANO — cada bloque es una textura o un objeto marino que llena TODO el cuadrado:
- *   naranja → escamas de pez dorado · amarillo → cofre del tesoro · rosa → anémona
- *   rojo → cangrejo · violeta → tentáculo de pulpo con ventosas · azul → olas
+ *   naranja → escamas de pez dorado · amarillo → cofre del tesoro · rosa → concha de vieira
+ *   rojo → coral rojo · violeta → tentáculo de pulpo con ventosas · azul → olas
  *   verde → caparazón de tortuga · piedra → roca con percebes
  * Fondo azul profundo con rayos de luz; las piezas estallan en burbujas que suben.
  */
@@ -13,8 +13,8 @@ import type { Ctx, SkinDef } from '../types';
 const C = {
   scales: '#ff8a2a',
   chest: '#ffd23a',
-  coral: '#ff6fb5',
-  crab: '#e8433f',
+  scallop: '#ff6fb5',
+  redcoral: '#e8433f',
   tentacle: '#a070e0',
   waves: '#3a86ff',
   turtle: '#3fbf7a',
@@ -105,122 +105,110 @@ function chest(ctx: Ctx, s: number) {
   finish(ctx, s, ST);
 }
 
-function coral(ctx: Ctx, s: number) {
-  // anémona vista desde arriba: tentáculos que llegan a las esquinas
-  face(ctx, s, rg(ctx, s, 0.5, 0.5, 0.75, [[0, '#7a1446'], [1, '#3a0a26']]), ST);
-  ctx.lineCap = 'round';
-  const layer = (n: number, len: number, w: number, c0: string, c1: string, tip: string, rot: number) => {
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + rot;
-      // alargar hacia las esquinas para llenar el cuadrado
-      const k = len / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a)));
-      const ex = 0.5 + Math.cos(a) * k * 0.5;
-      const ey = 0.5 + Math.sin(a) * k * 0.5;
-      const mx = 0.5 + Math.cos(a + 0.25) * k * 0.28;
-      const my = 0.5 + Math.sin(a + 0.25) * k * 0.28;
-      const g = ctx.createLinearGradient(s * 0.5, s * 0.5, ex * s, ey * s);
-      g.addColorStop(0, c0);
-      g.addColorStop(1, c1);
-      ctx.beginPath();
-      ctx.moveTo(s * 0.5, s * 0.5);
-      ctx.quadraticCurveTo(mx * s, my * s, ex * s, ey * s);
-      ctx.strokeStyle = '#4a0a2a';
-      ctx.lineWidth = s * (w + 0.02);
-      ctx.stroke();
-      ctx.strokeStyle = g;
-      ctx.lineWidth = s * w;
-      ctx.stroke();
-      circ(ctx, s, ex, ey, w * 0.62);
-      ctx.fillStyle = tip;
-      ctx.fill();
-    }
-  };
-  layer(22, 1.0, 0.075, '#c83a7a', '#ff6fb5', '#ffd0e8', 0);
-  layer(16, 0.62, 0.065, '#ff6fb5', '#ffa8d4', '#ffffff', 0.15);
-  // disco central con boca
-  circ(ctx, s, 0.5, 0.5, 0.13);
-  paint(ctx, s, rg(ctx, s, 0.47, 0.46, 0.14, [[0, '#ffe0a0'], [1, '#ff9a3a']]), '#4a0a2a', 0.02);
-  ctx.strokeStyle = 'rgba(160, 60, 0, 0.5)';
-  ctx.lineWidth = s * 0.012;
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * Math.PI * 2;
+function scallop(ctx: Ctx, s: number) {
+  // concha de vieira a todo el cuadrado: costillas en abanico desde abajo hasta los bordes
+  face(ctx, s, '#c8306a', ST);
+  const ox = 0.5;
+  const oy = 1.02;
+  const n = 9;
+  const a0 = Math.PI * 1.04;
+  const a1 = Math.PI * 1.96;
+  const far = 1.3;
+  for (let i = 0; i < n; i++) {
+    const t0 = a0 + ((a1 - a0) * i) / n;
+    const t1 = a0 + ((a1 - a0) * (i + 1)) / n;
     ctx.beginPath();
-    ctx.moveTo(s * (0.5 + Math.cos(a) * 0.04), s * (0.5 + Math.sin(a) * 0.04));
-    ctx.lineTo(s * (0.5 + Math.cos(a) * 0.12), s * (0.5 + Math.sin(a) * 0.12));
+    ctx.moveTo(ox * s, oy * s);
+    ctx.lineTo((ox + Math.cos(t0) * far) * s, (oy + Math.sin(t0) * far) * s);
+    ctx.lineTo((ox + Math.cos(t1) * far) * s, (oy + Math.sin(t1) * far) * s);
+    ctx.closePath();
+    // costilla con volumen: clara en el centro, oscura en los surcos
+    const g = ctx.createLinearGradient(
+      (ox + Math.cos(t0) * 0.5) * s,
+      (oy + Math.sin(t0) * 0.5) * s,
+      (ox + Math.cos(t1) * 0.5) * s,
+      (oy + Math.sin(t1) * 0.5) * s,
+    );
+    g.addColorStop(0, '#d8407a');
+    g.addColorStop(0.5, i % 2 ? '#ffc0dc' : '#ffa8cc');
+    g.addColorStop(1, '#c8306a');
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+  // líneas de crecimiento concéntricas
+  ctx.strokeStyle = 'rgba(140, 20, 70, 0.3)';
+  ctx.lineWidth = s * 0.014;
+  for (let r = 0.3; r < 1.4; r += 0.14) {
+    ctx.beginPath();
+    ctx.arc(ox * s, oy * s, r * s, a0, a1);
     ctx.stroke();
   }
-  ell(ctx, s, 0.5, 0.5, 0.035, 0.02);
-  ctx.fillStyle = '#7a1a0a';
-  ctx.fill();
+  // surcos entre costillas
+  ctx.strokeStyle = 'rgba(110, 10, 50, 0.55)';
+  ctx.lineWidth = s * 0.018;
+  for (let i = 0; i <= n; i++) {
+    const a = a0 + ((a1 - a0) * i) / n;
+    ctx.beginPath();
+    ctx.moveTo(ox * s, oy * s);
+    ctx.lineTo((ox + Math.cos(a) * far) * s, (oy + Math.sin(a) * far) * s);
+    ctx.stroke();
+  }
+  // bisagra abajo al centro
+  ctx.beginPath();
+  ctx.ellipse(ox * s, s * 1.0, s * 0.16, s * 0.1, 0, Math.PI, Math.PI * 2);
+  ctx.closePath();
+  paint(ctx, s, vg(ctx, s, '#ffb0d0', '#d8407a', 0.9, 1), '#6a0a36', 0.018);
+  // reflejo nacarado
+  ctx.fillStyle = rg(ctx, s, 0.35, 0.3, 0.5, [[0, 'rgba(255, 255, 255, 0.35)'], [1, 'rgba(255,255,255,0)']]);
+  ctx.fillRect(0, 0, s, s);
   finish(ctx, s, ST);
 }
 
-function crab(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#9fe6f0', '#4fb8d0'), ST);
-  const RED = rg(ctx, s, 0.4, 0.4, 0.7, [[0, '#ff8a6a'], [0.5, '#e8433f'], [1, '#a81a1a']]);
-  // patas a los lados
+function redcoral(ctx: Ctx, s: number) {
+  // coral rojo ramificado que llena el bloque, sobre agua profunda
+  face(ctx, s, vg(ctx, s, '#1a5a9a', '#0a2a5a'), ST);
   ctx.lineCap = 'round';
-  for (const side of [-1, 1]) {
-    for (const y of [0.56, 0.68, 0.8]) {
+  ctx.lineJoin = 'round';
+  // ramas: [x0, y0, x1, y1, grosor]
+  const br: Array<[number, number, number, number, number]> = [];
+  const grow = (x: number, y: number, a: number, len: number, w: number, depth: number) => {
+    const x1 = x + Math.cos(a) * len;
+    const y1 = y + Math.sin(a) * len;
+    br.push([x, y, x1, y1, w]);
+    if (depth === 0) return;
+    grow(x1, y1, a - 0.5, len * 0.78, w * 0.72, depth - 1);
+    grow(x1, y1, a + 0.45, len * 0.74, w * 0.72, depth - 1);
+  };
+  grow(0.5, 1.05, -Math.PI / 2, 0.3, 0.13, 4);
+  grow(0.12, 1.05, -Math.PI / 2 - 0.35, 0.22, 0.09, 3);
+  grow(0.9, 1.05, -Math.PI / 2 + 0.4, 0.22, 0.09, 3);
+  for (const pass of [0, 1, 2]) {
+    for (const [x0, y0, x1, y1, w] of br) {
+      const dx = pass === 2 ? -w * 0.15 : 0;
       ctx.beginPath();
-      ctx.moveTo(s * (0.5 + side * 0.3), s * y);
-      ctx.lineTo(s * (0.5 + side * 0.5), s * (y + 0.04));
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = s * 0.075;
-      ctx.stroke();
-      ctx.strokeStyle = '#d8382f';
-      ctx.lineWidth = s * 0.045;
+      ctx.moveTo((x0 + dx) * s, y0 * s);
+      ctx.lineTo((x1 + dx) * s, y1 * s);
+      ctx.strokeStyle = pass === 0 ? '#4a0808' : pass === 1 ? '#e8433f' : 'rgba(255, 170, 150, 0.6)';
+      ctx.lineWidth = s * (pass === 0 ? w + 0.025 : pass === 1 ? w : w * 0.3);
       ctx.stroke();
     }
   }
-  // pinzas en las esquinas de arriba
-  for (const side of [-1, 1]) {
-    const cx = 0.5 + side * 0.36;
-    ell(ctx, s, cx, 0.2, 0.16, 0.15, side * 0.3);
-    paint(ctx, s, RED, INK, 0.025);
-    ctx.beginPath();
-    ctx.moveTo(s * cx, s * 0.2);
-    ctx.lineTo(s * (cx + side * 0.18), s * 0.08);
-    ctx.lineTo(s * (cx + side * 0.2), s * 0.2);
-    ctx.closePath();
-    ctx.fillStyle = vg(ctx, s, '#9fe6f0', '#7fd2e2', 0.05, 0.2);
+  // pólipos en las puntas
+  for (const [, , x1, y1, w] of br) {
+    if (w > 0.05) continue;
+    circ(ctx, s, x1, y1, Math.max(0.025, w * 0.6));
+    ctx.fillStyle = '#ff8a7a';
+    ctx.fill();
+    circ(ctx, s, x1, y1, Math.max(0.01, w * 0.25));
+    ctx.fillStyle = '#ffe0d8';
     ctx.fill();
   }
-  // caparazón ancho
-  ctx.beginPath();
-  ctx.moveTo(s * 0.12, s * 0.58);
-  ctx.bezierCurveTo(s * 0.1, s * 0.3, s * 0.9, s * 0.3, s * 0.88, s * 0.58);
-  ctx.bezierCurveTo(s * 0.86, s * 0.96, s * 0.14, s * 0.96, s * 0.12, s * 0.58);
-  ctx.closePath();
-  paint(ctx, s, RED, INK, 0.03);
-  // ojos en pedúnculos
-  for (const x of [0.38, 0.62]) {
-    ctx.fillStyle = '#d8382f';
-    ctx.fillRect((x - 0.02) * s, 0.3 * s, 0.04 * s, 0.12 * s);
-    circ(ctx, s, x, 0.3, 0.075);
-    paint(ctx, s, '#ffffff', INK, 0.02);
-    circ(ctx, s, x + 0.012, 0.31, 0.038);
-    ctx.fillStyle = INK;
-    ctx.fill();
-    circ(ctx, s, x - 0.008, 0.29, 0.014);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-  }
-  // sonrisa, mejillas y pintitas
-  ctx.beginPath();
-  ctx.arc(s * 0.5, s * 0.62, s * 0.09, 0.2, Math.PI - 0.2);
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = s * 0.022;
-  ctx.stroke();
-  for (const x of [0.3, 0.7]) {
-    ell(ctx, s, x, 0.66, 0.05, 0.03);
-    ctx.fillStyle = 'rgba(255, 180, 200, 0.6)';
-    ctx.fill();
-  }
-  for (const [x, y] of [[0.36, 0.78], [0.64, 0.78], [0.5, 0.84]]) {
-    circ(ctx, s, x, y, 0.018);
-    ctx.fillStyle = 'rgba(120, 10, 10, 0.4)';
-    ctx.fill();
+  // burbujas
+  for (const [x, y, r] of [[0.84, 0.18, 0.03], [0.9, 0.08, 0.02], [0.16, 0.24, 0.025]]) {
+    circ(ctx, s, x, y, r);
+    ctx.strokeStyle = 'rgba(200, 235, 255, 0.75)';
+    ctx.lineWidth = s * 0.012;
+    ctx.stroke();
   }
   finish(ctx, s, ST);
 }
@@ -362,8 +350,8 @@ function rock(ctx: Ctx, s: number) {
 const DRAW: Record<Kind, (ctx: Ctx, s: number) => void> = {
   scales,
   chest,
-  coral,
-  crab,
+  scallop,
+  redcoral,
   tentacle,
   waves,
   turtle,
@@ -388,12 +376,12 @@ const ocean: SkinDef = {
   id: 'ocean',
   name: { es: 'Océano', en: 'Ocean' },
   description: {
-    es: 'Escamas, tesoros, anémonas, cangrejos, pulpos, olas y tortugas. ¡Explotan en burbujas!',
-    en: 'Scales, treasure, anemones, crabs, octopus, waves and turtles. They pop into bubbles!',
+    es: 'Escamas, tesoros, conchas, corales, pulpos, olas y tortugas. ¡Explotan en burbujas!',
+    en: 'Scales, treasure, shells, coral, octopus, waves and turtles. They pop into bubbles!',
   },
   price: 1100,
   order: 5.1,
-  blocks: [C.scales, C.chest, C.coral, C.crab, C.tentacle, C.waves, C.turtle, C.stone],
+  blocks: [C.scales, C.chest, C.scallop, C.redcoral, C.tentacle, C.waves, C.turtle, C.stone],
   ui: {
     bg: '#062a4a',
     panel: 'rgba(8, 48, 84, 0.9)',
