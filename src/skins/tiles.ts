@@ -89,9 +89,13 @@ export interface FaceStyle {
   depth?: string | null;
   /** Intensidad del brillo superior izquierdo 0..1. */
   shine?: number;
+  /** Grosor del contorno (fracción de s). */
+  line?: number;
+  /** Sombreado suave en la mitad inferior para dar volumen 0..1. */
+  soft?: number;
 }
 
-const DEF: Required<FaceStyle> = { inset: 0.05, rad: 0.14, ink: '#1c1410', depth: 'rgba(0,0,0,0.4)', shine: 0.22 };
+const DEF: Required<FaceStyle> = { inset: 0.05, rad: 0.14, ink: '#1c1410', depth: 'rgba(0,0,0,0.4)', shine: 0.22, line: 0.035, soft: 0 };
 
 /** Abre la cara del bloque: cuadrado redondeado con recorte activo. Cerrar con `finish`. */
 export function face(ctx: Ctx, s: number, fill: string | CanvasGradient, st: FaceStyle = {}) {
@@ -112,6 +116,13 @@ export function face(ctx: Ctx, s: number, fill: string | CanvasGradient, st: Fac
 /** Cierra la cara: brillo, borde y reflejo. */
 export function finish(ctx: Ctx, s: number, st: FaceStyle = {}) {
   const o = { ...DEF, ...st };
+  if (o.soft > 0) {
+    const sg = ctx.createLinearGradient(0, s * 0.45, 0, s);
+    sg.addColorStop(0, 'rgba(0,0,0,0)');
+    sg.addColorStop(1, `rgba(0,0,0,${o.soft})`);
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, 0, s, s);
+  }
   if (o.shine > 0) {
     const hl = ctx.createLinearGradient(0, 0, s * 0.6, s * 0.6);
     hl.addColorStop(0, `rgba(255,255,255,${o.shine})`);
@@ -123,7 +134,7 @@ export function finish(ctx: Ctx, s: number, st: FaceStyle = {}) {
   const i = s * o.inset;
   roundRect(ctx, i, i, s - i * 2, s - i * 2, s * o.rad);
   ctx.strokeStyle = o.ink;
-  ctx.lineWidth = Math.max(1.2, s * 0.035);
+  ctx.lineWidth = Math.max(1, s * o.line);
   ctx.stroke();
   if (o.shine > 0) {
     ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.7, o.shine * 2.4)})`;

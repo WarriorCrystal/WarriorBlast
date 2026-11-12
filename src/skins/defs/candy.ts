@@ -23,8 +23,7 @@ const C = {
 type Kind = keyof typeof C;
 const kindOf = kinds(C, 'lolly');
 
-const INK = '#5a1a44';
-const ST = { ink: INK, depth: 'rgba(120, 20, 80, 0.35)', shine: 0.3 };
+const ST = { ink: 'rgba(110, 30, 80, 0.5)', depth: 'rgba(160, 40, 100, 0.22)', shine: 0.32, rad: 0.22, line: 0.026, soft: 0.12 };
 
 /** Brillo de golosina: reflejo blanco curvo. */
 function gloss(ctx: Ctx, s: number, x = 0.3, y = 0.26, w = 0.13) {
@@ -59,7 +58,7 @@ function lolly(ctx: Ctx, s: number) {
   circ(ctx, s, 0.5, 0.5, 0.07);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
-  ctx.fillStyle = rg(ctx, s, 0.5, 0.5, 0.65, [[0, 'rgba(255,255,255,0)'], [1, 'rgba(160,20,90,0.35)']]);
+  ctx.fillStyle = rg(ctx, s, 0.5, 0.5, 0.65, [[0, 'rgba(255,255,255,0)'], [1, 'rgba(160,20,90,0.2)']]);
   ctx.fillRect(0, 0, s, s);
   gloss(ctx, s);
   finish(ctx, s, ST);
@@ -76,8 +75,8 @@ function wrapped(ctx: Ctx, s: number) {
     ctx.lineTo((0.5 + dir * 0.55) * s, 0.88 * s);
     ctx.lineTo(x0 * s, 0.62 * s);
     ctx.closePath();
-    paint(ctx, s, vg(ctx, s, '#e0fffb', '#7ae6dc', 0.1, 0.9), '#0f7a72', 0.022);
-    ctx.strokeStyle = 'rgba(15, 122, 114, 0.45)';
+    paint(ctx, s, vg(ctx, s, '#e0fffb', '#7ae6dc', 0.1, 0.9), 'rgba(15, 122, 114, 0.5)', 0.016);
+    ctx.strokeStyle = 'rgba(15, 122, 114, 0.25)';
     ctx.lineWidth = s * 0.015;
     for (const y of [0.24, 0.36, 0.5, 0.64, 0.76]) {
       ctx.beginPath();
@@ -88,7 +87,7 @@ function wrapped(ctx: Ctx, s: number) {
   }
   // caramelo central
   ell(ctx, s, 0.5, 0.5, 0.28, 0.24);
-  paint(ctx, s, rg(ctx, s, 0.42, 0.4, 0.35, [[0, '#d8fffa'], [0.5, '#2ed3c6'], [1, '#128f86']]), '#0f6a64', 0.03);
+  paint(ctx, s, rg(ctx, s, 0.42, 0.4, 0.35, [[0, '#d8fffa'], [0.5, '#2ed3c6'], [1, '#128f86']]), 'rgba(15, 106, 100, 0.55)', 0.02);
   // rayas blancas en diagonal
   ctx.save();
   ell(ctx, s, 0.5, 0.5, 0.28, 0.24);
@@ -140,8 +139,8 @@ function honey(ctx: Ctx, s: number) {
       ctx.closePath();
       ctx.fillStyle = rg(ctx, s, cx + 0.03, cy + 0.04, R, [[0, '#a85a08'], [0.7, '#e8961a'], [1, '#ffcf5a']]);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 245, 200, 0.75)';
-      ctx.lineWidth = s * 0.014;
+      ctx.strokeStyle = 'rgba(255, 245, 200, 0.6)';
+      ctx.lineWidth = s * 0.012;
       ctx.stroke();
     }
   gloss(ctx, s, 0.3, 0.24, 0.16);
@@ -162,7 +161,7 @@ function cane(ctx: Ctx, s: number) {
   }
   ctx.restore();
   // volumen: brillo en una franja y sombra en el borde
-  ctx.fillStyle = rg(ctx, s, 0.5, 0.5, 0.72, [[0.55, 'rgba(0,0,0,0)'], [1, 'rgba(140, 0, 30, 0.35)']]);
+  ctx.fillStyle = rg(ctx, s, 0.5, 0.5, 0.72, [[0.55, 'rgba(0,0,0,0)'], [1, 'rgba(140, 0, 30, 0.2)']]);
   ctx.fillRect(0, 0, s, s);
   ctx.save();
   ctx.translate(s / 2, s / 2);
@@ -190,8 +189,8 @@ function cushion(ctx: Ctx, s: number) {
     ctx.closePath();
     ctx.fillStyle = c;
     ctx.fill();
-    ctx.strokeStyle = 'rgba(60, 10, 120, 0.4)';
-    ctx.lineWidth = s * 0.012;
+    ctx.strokeStyle = 'rgba(60, 10, 120, 0.2)';
+    ctx.lineWidth = s * 0.01;
     ctx.stroke();
   }
   roundRect(ctx, k * s, k * s, (1 - 2 * k) * s, (1 - 2 * k) * s, s * 0.03);
@@ -256,7 +255,7 @@ function belt(ctx: Ctx, s: number) {
 
 function chocolate(ctx: Ctx, s: number) {
   // tableta de chocolate: 2×2 onzas con biseles
-  face(ctx, s, '#4a2410', { ...ST, rad: 0.1 });
+  face(ctx, s, '#4a2410', { ...ST, rad: 0.12 });
   const g = 0.05;
   const q = (1 - g * 3) / 2;
   for (const [i, j] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
@@ -271,7 +270,7 @@ function chocolate(ctx: Ctx, s: number) {
     ctx.fillStyle = 'rgba(255, 220, 190, 0.35)';
     ctx.fillRect((x + 0.04) * s, (y + 0.03) * s, (q - 0.08) * s, s * 0.02);
   }
-  finish(ctx, s, { ...ST, rad: 0.1, shine: 0.12 });
+  finish(ctx, s, { ...ST, rad: 0.12, shine: 0.16 });
 }
 
 const DRAW: Record<Kind, (ctx: Ctx, s: number) => void> = {
@@ -317,29 +316,29 @@ const candy: SkinDef = {
 
   drawBackground(ctx, w, h) {
     // rayas diagonales rosa/turquesa
-    ctx.fillStyle = '#ffc6e0';
+    ctx.fillStyle = '#ffd3e7';
     ctx.fillRect(0, 0, w, h);
-    const step = 46;
+    const step = 56;
     ctx.save();
     ctx.translate(w / 2, h / 2);
     ctx.rotate(-Math.PI / 4);
     const m = Math.hypot(w, h);
     for (let x = -m; x < m; x += step * 2) {
-      ctx.fillStyle = 'rgba(120, 230, 220, 0.55)';
+      ctx.fillStyle = 'rgba(150, 232, 224, 0.3)';
       ctx.fillRect(x, -m, step, m * 2);
     }
     ctx.restore();
     // lunares de azúcar
     const r = rng(11);
-    for (let i = 0; i < (w * h) / 5000; i++) {
-      ctx.fillStyle = `rgba(255,255,255,${0.35 + r() * 0.4})`;
+    for (let i = 0; i < (w * h) / 9000; i++) {
+      ctx.fillStyle = `rgba(255,255,255,${0.25 + r() * 0.3})`;
       ctx.beginPath();
       ctx.arc(r() * w, r() * h, 2 + r() * 4, 0, Math.PI * 2);
       ctx.fill();
     }
     const v = ctx.createRadialGradient(w / 2, h * 0.45, Math.min(w, h) * 0.3, w / 2, h * 0.45, Math.max(w, h) * 0.8);
     v.addColorStop(0, 'rgba(255,255,255,0.25)');
-    v.addColorStop(1, 'rgba(200, 60, 140, 0.25)');
+    v.addColorStop(1, 'rgba(200, 60, 140, 0.14)');
     ctx.fillStyle = v;
     ctx.fillRect(0, 0, w, h);
   },
@@ -361,7 +360,7 @@ const candy: SkinDef = {
     ctx.translate(size / 2, size / 2);
     ctx.rotate(-Math.PI / 4);
     for (let x = -size * 1.5; x < size * 1.5; x += cell * 0.4) {
-      ctx.fillStyle = '#ff5fa2';
+      ctx.fillStyle = '#ff8cbf';
       ctx.fillRect(x, -size * 1.5, cell * 0.2, size * 3);
     }
     ctx.restore();
@@ -373,7 +372,7 @@ const candy: SkinDef = {
       roundRect(ctx, px + i, py + i, cell - i * 2, cell - i * 2, cell * 0.24);
       ctx.fillStyle = (x + y) % 2 ? '#ffe2f0' : '#e2f8f5';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(200, 80, 150, 0.15)';
+      ctx.strokeStyle = 'rgba(200, 80, 150, 0.08)';
       ctx.lineWidth = Math.max(1, cell * 0.025);
       ctx.stroke();
     });
