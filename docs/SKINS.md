@@ -32,6 +32,10 @@ Everything is drawn with the standard Canvas 2D API and automatically converted 
 at the screen's resolution. The helpers in `src/skins/draw.ts` (`roundRect`, `shade`, `rgba`,
 `star`, `softDot`, `drawGemIcon`…) save you work.
 
+For "illustrated tile" skins, where every block IS an object filling the whole rounded square
+(Fast Food, Test Chamber, Space, Ocean, Candy, Fruits, Mate & BBQ, Casino), use `src/skins/tiles.ts`:
+`face()` opens the clipped square, you draw the object, `finish()` adds the border and shine.
+
 ## Tips
 
 - Test the skin in all four situations: board, dragged piece (`ghost`), clearing (particles and `flash`) and menus (`ui`).
