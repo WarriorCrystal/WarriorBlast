@@ -56,124 +56,159 @@ function melon(ctx: Ctx, s: number) {
 }
 
 function berry(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#ffd6d6', '#ffaaaa'), ST);
-  // fresa enorme
-  ctx.beginPath();
-  ctx.moveTo(0.5 * s, 0.98 * s);
-  ctx.bezierCurveTo(0.0, 0.6 * s, 0.0, 0.18 * s, 0.5 * s, 0.2 * s);
-  ctx.bezierCurveTo(1.0 * s, 0.18 * s, 1.0 * s, 0.6 * s, 0.5 * s, 0.98 * s);
-  ctx.closePath();
-  paint(ctx, s, rg(ctx, s, 0.38, 0.4, 0.65, [[0, '#ff6a6a'], [0.6, '#d8202e'], [1, '#8a0a14']]), '#5a0a0a', 0.028);
-  // pepitas
-  ctx.fillStyle = '#ffe680';
-  for (let row = 0; row < 6; row++) {
-    const y = 0.32 + row * 0.11;
-    const half = 0.34 - row * 0.05;
-    for (let k = 0; k < 5; k++) {
-      const x = 0.5 - half + (k + (row % 2) * 0.5) * (half * 2) / 5;
-      if (x < 0.5 - half || x > 0.5 + half) continue;
-      ell(ctx, s, x, y, 0.014, 0.022);
+  // piel de frutilla a todo el cuadrado, con las hojas cubriendo el borde de arriba
+  face(ctx, s, rg(ctx, s, 0.4, 0.45, 0.8, [[0, '#ff6a6a'], [0.55, '#e0202e'], [1, '#8a0a14']]), ST);
+  // semillas en hileras alternadas, cada una en su hoyito
+  for (let row = 0; row < 7; row++) {
+    const y = 0.3 + row * 0.12;
+    for (let k = 0; k < 6; k++) {
+      const x = 0.08 + k * 0.17 + (row % 2 ? 0.085 : 0);
+      ell(ctx, s, x, y + 0.008, 0.03, 0.038);
+      ctx.fillStyle = 'rgba(110, 0, 10, 0.45)';
+      ctx.fill();
+      ell(ctx, s, x, y, 0.016, 0.025);
+      ctx.fillStyle = '#ffe680';
       ctx.fill();
     }
   }
-  // hojas
-  ctx.fillStyle = '#3fae3a';
-  ctx.strokeStyle = '#1a5a1a';
-  ctx.lineWidth = s * 0.02;
-  for (let i = 0; i < 5; i++) {
-    const a = -Math.PI / 2 + (i - 2) * 0.55;
-    ctx.save();
-    ctx.translate(0.5 * s, 0.22 * s);
-    ctx.rotate(a + Math.PI / 2);
-    ctx.beginPath();
-    ctx.ellipse(0, s * 0.09, s * 0.05, s * 0.11, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
+  // corona de hojas a lo ancho
+  ctx.beginPath();
+  ctx.moveTo(-0.02 * s, 0);
+  ctx.lineTo(1.02 * s, 0);
+  const tips = 7;
+  for (let i = tips; i >= 0; i--) {
+    const x = i / tips;
+    const xm = (i - 0.5) / tips;
+    ctx.lineTo(x * s, (i % 2 ? 0.3 : 0.22) * s);
+    if (i > 0) ctx.quadraticCurveTo(xm * s, 0.1 * s, ((i - 1) / tips) * s, ((i - 1) % 2 ? 0.3 : 0.22) * s);
   }
-  ctx.fillStyle = '#2f8a2a';
-  ctx.fillRect(0.47 * s, 0.02 * s, 0.06 * s, 0.14 * s);
-  ell(ctx, s, 0.34, 0.42, 0.06, 0.03, -0.8);
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.closePath();
+  paint(ctx, s, vg(ctx, s, '#7ad84a', '#2f8a2a', 0, 0.3), '#1a5a1a', 0.022);
+  ctx.strokeStyle = 'rgba(20, 80, 20, 0.5)';
+  ctx.lineWidth = s * 0.012;
+  for (let i = 1; i < tips; i += 2) {
+    ctx.beginPath();
+    ctx.moveTo((i / tips) * s, 0.05 * s);
+    ctx.lineTo((i / tips) * s, 0.26 * s);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#3f7a1a';
+  ctx.fillRect(0.46 * s, 0, 0.08 * s, 0.1 * s);
+  ell(ctx, s, 0.26, 0.48, 0.1, 0.035, -0.5);
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
   ctx.fill();
   finish(ctx, s, ST);
+}
+
+/** Bayas redondas en cuadrícula n×n que llenan todo el cuadrado. */
+function berryGrid(ctx: Ctx, s: number, n: number, bg: string, light: string, mid: string, dark: string, inkc: string, after?: (x: number, y: number, r: number) => void) {
+  face(ctx, s, bg, ST);
+  const step = 1 / n;
+  const r = step * 0.56;
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < n; i++) {
+      const x = step * (i + 0.5);
+      const y = step * (j + 0.5);
+      circ(ctx, s, x, y, r);
+      paint(ctx, s, rg(ctx, s, x - r * 0.35, y - r * 0.4, r * 1.35, [[0, light], [0.5, mid], [1, dark]]), inkc, 0.02);
+      circ(ctx, s, x - r * 0.35, y - r * 0.4, r * 0.2);
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fill();
+      after?.(x, y, r);
+    }
 }
 
 function grape(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#e8d8ff', '#bfa0f0'), ST);
-  // racimo
-  const balls: Array<[number, number]> = [
-    [0.22, 0.3], [0.42, 0.28], [0.62, 0.28], [0.8, 0.32],
-    [0.32, 0.48], [0.52, 0.47], [0.72, 0.5],
-    [0.2, 0.62], [0.42, 0.66], [0.62, 0.67], [0.82, 0.66],
-    [0.32, 0.84], [0.52, 0.86], [0.72, 0.84],
-  ];
-  for (const [x, y] of balls) {
-    circ(ctx, s, x, y, 0.13);
-    paint(ctx, s, rg(ctx, s, x - 0.04, y - 0.05, 0.16, [[0, '#d0a0ff'], [0.5, '#8a3fc8'], [1, '#4a1478']]), '#2a0a48', 0.02);
-    circ(ctx, s, x - 0.04, y - 0.05, 0.025);
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  berryGrid(ctx, s, 3, '#2a0a48', '#d8a8ff', '#8a3fc8', '#4a1478', '#2a0a48', (x, y, r) => {
+    // pruina: velo blanquecino
+    ell(ctx, s, x + r * 0.25, y + r * 0.3, r * 0.45, r * 0.3);
+    ctx.fillStyle = 'rgba(230, 210, 255, 0.18)';
     ctx.fill();
-  }
-  // tallo y hojita
+  });
+  // ramita arriba
   ctx.strokeStyle = '#6a4a20';
-  ctx.lineWidth = s * 0.04;
+  ctx.lineWidth = s * 0.035;
   ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(0.5 * s, 0.18 * s);
-  ctx.quadraticCurveTo(0.52 * s, 0.08 * s, 0.6 * s, 0.04 * s);
+  ctx.moveTo(0.5 * s, 0.22 * s);
+  ctx.quadraticCurveTo(0.54 * s, 0.1 * s, 0.68 * s, 0.06 * s);
   ctx.stroke();
-  ell(ctx, s, 0.72, 0.12, 0.13, 0.06, -0.3);
-  paint(ctx, s, '#5fbf3a', '#1f5a1a', 0.02);
+  ell(ctx, s, 0.8, 0.1, 0.12, 0.05, -0.3);
+  paint(ctx, s, '#5fbf3a', '#1f5a1a', 0.018);
   finish(ctx, s, ST);
 }
 
-function citrus(ctx: Ctx, s: number, peel: string, rind: string, pulp: string, pulpDark: string, inkc: string) {
-  face(ctx, s, peel, ST);
-  circ(ctx, s, 0.5, 0.5, 0.47);
-  ctx.fillStyle = rind;
+/** Rodaja cuadrada de cítrico: cáscara en el borde, gajos que llegan a las esquinas. */
+function citrus(ctx: Ctx, s: number, rind: string, pith: string, pulp: string, pulpDark: string, seeds: boolean) {
+  face(ctx, s, vg(ctx, s, shade(rind, 0.2), shade(rind, -0.15)), ST);
+  roundRect(ctx, s * 0.1, s * 0.1, s * 0.8, s * 0.8, s * 0.1);
+  ctx.fillStyle = pith;
   ctx.fill();
-  circ(ctx, s, 0.5, 0.5, 0.41);
-  ctx.fillStyle = '#fffbe8';
-  ctx.fill();
-  // gajos
   ctx.save();
+  roundRect(ctx, s * 0.14, s * 0.14, s * 0.72, s * 0.72, s * 0.07);
+  ctx.clip();
+  ctx.fillStyle = pith;
+  ctx.fillRect(0, 0, s, s);
   ctx.translate(s / 2, s / 2);
-  for (let i = 0; i < 9; i++) {
-    const a0 = (i / 9) * Math.PI * 2 + 0.06;
-    const a1 = ((i + 1) / 9) * Math.PI * 2 - 0.06;
+  const n = 10;
+  for (let i = 0; i < n; i++) {
+    const a0 = (i / n) * Math.PI * 2;
+    const a1 = ((i + 1) / n) * Math.PI * 2;
     ctx.beginPath();
-    ctx.moveTo(Math.cos((a0 + a1) / 2) * s * 0.04, Math.sin((a0 + a1) / 2) * s * 0.04);
-    ctx.arc(0, 0, s * 0.37, a0, a1);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(a0) * s, Math.sin(a0) * s);
+    ctx.lineTo(Math.cos(a1) * s, Math.sin(a1) * s);
     ctx.closePath();
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.37);
-    g.addColorStop(0, shade(pulp, 0.3));
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.5);
+    g.addColorStop(0, shade(pulp, 0.35));
+    g.addColorStop(0.6, pulp);
     g.addColorStop(1, pulpDark);
     ctx.fillStyle = g;
     ctx.fill();
   }
-  // vesículas de jugo
-  const r = rng(peel.length * 7);
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.lineWidth = s * 0.012;
-  for (let i = 0; i < 26; i++) {
-    const a = r() * Math.PI * 2;
-    const rr = (0.1 + r() * 0.25) * s;
+  // membranas blancas entre gajos
+  ctx.strokeStyle = pith;
+  ctx.lineWidth = s * 0.03;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
     ctx.beginPath();
-    ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
-    ctx.lineTo(Math.cos(a) * (rr + s * 0.04), Math.sin(a) * (rr + s * 0.04));
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s);
     ctx.stroke();
   }
+  // vesículas de jugo
+  const r = rng(rind.length * 13);
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = s * 0.012;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 40; i++) {
+    const a = r() * Math.PI * 2;
+    const d = (0.1 + r() * 0.3) * s;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * d, Math.sin(a) * d);
+    ctx.lineTo(Math.cos(a) * (d + s * 0.05), Math.sin(a) * (d + s * 0.05));
+    ctx.stroke();
+  }
+  if (seeds) {
+    ctx.fillStyle = '#fffbe0';
+    for (const a of [0.3, 2.2, 4.1]) {
+      ctx.beginPath();
+      ctx.ellipse(Math.cos(a) * s * 0.14, Math.sin(a) * s * 0.14, s * 0.02, s * 0.04, a + Math.PI / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.beginPath();
+  ctx.arc(0, 0, s * 0.04, 0, Math.PI * 2);
+  ctx.fillStyle = pith;
+  ctx.fill();
   ctx.restore();
-  circ(ctx, s, 0.5, 0.5, 0.47);
-  ctx.strokeStyle = inkc;
-  ctx.lineWidth = s * 0.02;
-  ctx.stroke();
+  // poros de la cáscara
+  dots(ctx, s, 3, 14, 'rgba(255,255,255,0.3)', [0.006, 0.01], [0.02, 0.02, 0.98, 0.1]);
   finish(ctx, s, ST);
 }
 
-const orange = (ctx: Ctx, s: number) => citrus(ctx, s, '#ffcf8a', '#ff8a10', '#ff9a2a', '#f07010', '#a04a00');
-const lemon = (ctx: Ctx, s: number) => citrus(ctx, s, '#fff6b0', '#f5d010', '#ffe85a', '#f2d020', '#8a7a00');
+const orange = (ctx: Ctx, s: number) => citrus(ctx, s, '#ff8a10', '#fff2dc', '#ff9a2a', '#e86a08', false);
+const lemon = (ctx: Ctx, s: number) => citrus(ctx, s, '#f5d010', '#fffbe8', '#ffe85a', '#f0cc18', true);
 
 function kiwi(ctx: Ctx, s: number) {
   // rodaja de kiwi a todo el cuadrado con piel marrón en el borde
@@ -209,31 +244,28 @@ function kiwi(ctx: Ctx, s: number) {
 }
 
 function blue(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#d8e2ff', '#a6b8f0'), ST);
-  const balls: Array<[number, number, number]> = [
-    [0.28, 0.28, 0.22], [0.72, 0.28, 0.22], [0.28, 0.72, 0.22], [0.72, 0.72, 0.22], [0.5, 0.5, 0.2],
-  ];
-  for (const [x, y, r] of balls) {
-    circ(ctx, s, x, y, r);
-    paint(ctx, s, rg(ctx, s, x - r * 0.3, y - r * 0.3, r * 1.3, [[0, '#9ab0ff'], [0.5, '#3d5fd1'], [1, '#1a2a78']]), '#0e1640', 0.022);
-    // pruina (capa blanquecina) y coronita
-    circ(ctx, s, x - r * 0.3, y - r * 0.35, r * 0.35);
-    ctx.fillStyle = 'rgba(220, 230, 255, 0.35)';
+  berryGrid(ctx, s, 2, '#0e1640', '#9ab0ff', '#3d5fd1', '#1a2a78', '#0e1640', (x, y, r) => {
+    // pruina y coronita de cinco puntas
+    ell(ctx, s, x + r * 0.2, y + r * 0.35, r * 0.5, r * 0.3);
+    ctx.fillStyle = 'rgba(210, 225, 255, 0.2)';
     ctx.fill();
     ctx.save();
-    ctx.translate(x * s, y * s);
+    ctx.translate(x * s, (y - r * 0.05) * s);
+    circ(ctx, 1, 0, 0, r * s * 0.22);
     ctx.fillStyle = '#1a2050';
+    ctx.fill();
     for (let i = 0; i < 5; i++) {
       ctx.rotate((Math.PI * 2) / 5);
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(s * 0.02, -s * 0.045);
-      ctx.lineTo(-s * 0.02, -s * 0.045);
+      ctx.moveTo(-r * s * 0.08, 0);
+      ctx.lineTo(0, -r * s * 0.3);
+      ctx.lineTo(r * s * 0.08, 0);
       ctx.closePath();
+      ctx.fillStyle = '#2a3070';
       ctx.fill();
     }
     ctx.restore();
-  }
+  });
   finish(ctx, s, ST);
 }
 

@@ -1,310 +1,358 @@
-import { roundRect, shade, star } from '../draw';
-import { cells, circ, dots, ell, face, finish, ghostTile, kinds, paint, poly, rg, vg } from '../tiles';
+import { roundRect, star } from '../draw';
+import { cells, circ, ell, face, finish, ghostTile, kinds, paint, rg, rng, vg } from '../tiles';
 import type { Ctx, SkinDef } from '../types';
 
 /**
- * OCÉANO — cada bloque es una criatura o tesoro marino que llena todo el cuadrado:
- *   naranja → pez payaso · amarillo → pez globo · rosa → medusa · rojo → estrella de mar
- *   violeta → concha · azul → pulpo · verde → tortuga marina · piedra → roca con percebes
+ * OCÉANO — cada bloque es una textura o un objeto marino que llena TODO el cuadrado:
+ *   naranja → escamas de pez dorado · amarillo → cofre del tesoro · rosa → anémona
+ *   rojo → cangrejo · violeta → tentáculo de pulpo con ventosas · azul → olas
+ *   verde → caparazón de tortuga · piedra → roca con percebes
  * Fondo azul profundo con rayos de luz; las piezas estallan en burbujas que suben.
  */
 
 const C = {
-  clown: '#ff8a2a',
-  puffer: '#ffd23a',
-  jelly: '#ff6fb5',
-  starfish: '#e8433f',
-  shell: '#a070e0',
-  octopus: '#3a86ff',
+  scales: '#ff8a2a',
+  chest: '#ffd23a',
+  coral: '#ff6fb5',
+  crab: '#e8433f',
+  tentacle: '#a070e0',
+  waves: '#3a86ff',
   turtle: '#3fbf7a',
   stone: '#5f6f7a',
 };
 type Kind = keyof typeof C;
-const kindOf = kinds(C, 'clown');
+const kindOf = kinds(C, 'scales');
 
 const INK = '#0b2238';
-const ST = { ink: INK, depth: 'rgba(0, 20, 50, 0.45)', shine: 0.25 };
+const ST = { ink: INK, depth: 'rgba(0, 20, 50, 0.45)', shine: 0.22 };
 
-/** Agua de fondo de cada baldosa, teñida. */
-function water(ctx: Ctx, s: number, tint: string) {
-  face(ctx, s, vg(ctx, s, shade(tint, 0.55), shade(tint, 0.15)), ST);
-}
-
-function eye(ctx: Ctx, s: number, x: number, y: number, r: number) {
-  circ(ctx, s, x, y, r);
-  paint(ctx, s, '#ffffff', INK, 0.015);
-  circ(ctx, s, x + r * 0.15, y + r * 0.1, r * 0.55);
-  ctx.fillStyle = INK;
-  ctx.fill();
-  circ(ctx, s, x - r * 0.15, y - r * 0.2, r * 0.22);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-}
-
-function clown(ctx: Ctx, s: number) {
-  water(ctx, s, '#4fb8e8');
-  // cuerpo enorme que casi llena el bloque
-  ctx.beginPath();
-  ctx.moveTo(0.08 * s, 0.5 * s);
-  ctx.bezierCurveTo(0.12 * s, 0.1 * s, 0.7 * s, 0.08 * s, 0.82 * s, 0.5 * s);
-  ctx.bezierCurveTo(0.7 * s, 0.92 * s, 0.12 * s, 0.9 * s, 0.08 * s, 0.5 * s);
-  ctx.closePath();
-  ctx.save();
-  paint(ctx, s, vg(ctx, s, '#ffb35a', '#f06a10', 0.1, 0.9), INK, 0.03);
-  ctx.clip();
-  // franjas blancas con borde negro
-  for (const x of [0.28, 0.52, 0.74]) {
-    ctx.beginPath();
-    ctx.moveTo((x - 0.06) * s, 0);
-    ctx.quadraticCurveTo((x + 0.04) * s, 0.5 * s, (x - 0.06) * s, s);
-    ctx.lineTo((x + 0.06) * s, s);
-    ctx.quadraticCurveTo((x + 0.14) * s, 0.5 * s, (x + 0.06) * s, 0);
-    ctx.closePath();
-    paint(ctx, s, '#ffffff', INK, 0.025);
-  }
-  ctx.restore();
-  // cola
-  poly(ctx, s, [[0.8, 0.5], [0.98, 0.3], [0.98, 0.7]]);
-  paint(ctx, s, '#f06a10', INK, 0.025);
-  ctx.fillStyle = '#ffffff';
-  poly(ctx, s, [[0.93, 0.36], [0.98, 0.3], [0.98, 0.7], [0.93, 0.64]]);
-  ctx.fill();
-  eye(ctx, s, 0.2, 0.42, 0.07);
-  // aleta
-  ell(ctx, s, 0.42, 0.66, 0.08, 0.04, 0.5);
-  paint(ctx, s, '#ffb35a', INK, 0.02);
-  finish(ctx, s, ST);
-}
-
-function puffer(ctx: Ctx, s: number) {
-  water(ctx, s, '#35a6c8');
-  // espinas
-  ctx.save();
-  ctx.translate(s * 0.5, s * 0.52);
-  ctx.fillStyle = '#c99a10';
-  for (let i = 0; i < 18; i++) {
-    ctx.rotate((Math.PI * 2) / 18);
-    ctx.beginPath();
-    ctx.moveTo(-s * 0.035, -s * 0.38);
-    ctx.lineTo(0, -s * 0.5);
-    ctx.lineTo(s * 0.035, -s * 0.38);
-    ctx.fill();
-  }
-  ctx.restore();
-  circ(ctx, s, 0.5, 0.52, 0.4);
-  paint(ctx, s, rg(ctx, s, 0.4, 0.38, 0.5, [[0, '#fff2a0'], [0.6, '#ffd23a'], [1, '#d9a010']]), INK, 0.03);
-  // panza clara y manchas
-  ell(ctx, s, 0.5, 0.74, 0.26, 0.14);
-  ctx.fillStyle = 'rgba(255, 252, 230, 0.8)';
-  ctx.fill();
-  dots(ctx, s, 4, 8, 'rgba(160, 110, 10, 0.5)', [0.015, 0.025], [0.25, 0.2, 0.75, 0.5]);
-  eye(ctx, s, 0.36, 0.44, 0.075);
-  eye(ctx, s, 0.64, 0.44, 0.075);
-  // boquita
-  circ(ctx, s, 0.5, 0.64, 0.045);
-  paint(ctx, s, '#ff8a6a', INK, 0.02);
-  finish(ctx, s, ST);
-}
-
-function jelly(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#2a5aa8', '#0e2c66'), ST);
-  // tentáculos ondulados
-  ctx.lineCap = 'round';
-  for (let i = 0; i < 7; i++) {
-    const x = 0.2 + i * 0.1;
-    ctx.beginPath();
-    ctx.moveTo(x * s, 0.5 * s);
-    for (let k = 1; k <= 5; k++) ctx.quadraticCurveTo((x + (k % 2 ? 0.05 : -0.05)) * s, (0.5 + k * 0.1 - 0.05) * s, x * s, (0.5 + k * 0.1) * s);
-    ctx.strokeStyle = i % 2 ? 'rgba(255, 180, 220, 0.85)' : 'rgba(255, 120, 190, 0.85)';
-    ctx.lineWidth = s * (i % 2 ? 0.025 : 0.04);
-    ctx.stroke();
-  }
-  // campana grande
-  ctx.save();
-  ctx.shadowColor = '#ff8fd0';
-  ctx.shadowBlur = s * 0.2;
-  ctx.beginPath();
-  ctx.moveTo(0.06 * s, 0.56 * s);
-  ctx.bezierCurveTo(0.04 * s, 0.0, 0.96 * s, 0.0, 0.94 * s, 0.56 * s);
-  for (let i = 0; i < 6; i++) {
-    const x0 = 0.94 - i * 0.147;
-    ctx.quadraticCurveTo((x0 - 0.073) * s, 0.64 * s, (x0 - 0.147) * s, 0.56 * s);
-  }
-  ctx.closePath();
-  ctx.fillStyle = rg(ctx, s, 0.5, 0.3, 0.55, [[0, 'rgba(255, 230, 245, 0.95)'], [0.6, 'rgba(255, 111, 181, 0.9)'], [1, 'rgba(200, 50, 140, 0.9)']]);
-  ctx.fill();
-  ctx.restore();
-  // órganos internos
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-  ctx.lineWidth = s * 0.025;
-  for (const x of [0.36, 0.5, 0.64]) {
-    ctx.beginPath();
-    ctx.arc(x * s, 0.38 * s, s * 0.05, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  ell(ctx, s, 0.32, 0.2, 0.1, 0.04, -0.5);
-  ctx.fillStyle = 'rgba(255,255,255,0.6)';
-  ctx.fill();
-  finish(ctx, s, { ...ST, shine: 0.12 });
-}
-
-function starfish(ctx: Ctx, s: number) {
-  // sobre arena
-  face(ctx, s, vg(ctx, s, '#f6dfa8', '#d9b46a'), ST);
-  dots(ctx, s, 13, 18, 'rgba(160, 120, 60, 0.35)', [0.006, 0.012]);
-  ctx.save();
-  ctx.translate(s * 0.5, s * 0.53);
-  ctx.rotate(-0.15);
-  ctx.beginPath();
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? 0.52 : 0.2;
-    const a = (i * Math.PI) / 5 - Math.PI / 2;
-    const x = Math.cos(a) * r * s;
-    const y = Math.sin(a) * r * s;
-    if (i === 0) ctx.moveTo(x, y);
-    else {
-      const pa = ((i - 0.5) * Math.PI) / 5 - Math.PI / 2;
-      const pr = 0.3 * s;
-      ctx.quadraticCurveTo(Math.cos(pa) * pr, Math.sin(pa) * pr, x, y);
+function scales(ctx: Ctx, s: number) {
+  face(ctx, s, '#c8500a', ST);
+  // filas de escamas de abajo hacia arriba: cada fila tapa la base de la anterior
+  const R = 0.13;
+  for (let row = 9; row >= 0; row--) {
+    const y = -0.08 + row * 0.12;
+    const off = row % 2 ? R : 0;
+    for (let x = -off; x < 1.2; x += R * 2) {
+      circ(ctx, s, x, y, R);
+      ctx.fillStyle = rg(ctx, s, x - R * 0.3, y - R * 0.5, R * 1.4, [[0, '#ffe2a0'], [0.45, '#ffa040'], [1, '#d85a10']]);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(120, 40, 0, 0.55)';
+      ctx.lineWidth = s * 0.016;
+      ctx.stroke();
+      // brillo nacarado
+      ctx.beginPath();
+      ctx.arc(x * s, y * s, R * s * 0.7, Math.PI * 1.15, Math.PI * 1.55);
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = s * 0.012;
+      ctx.stroke();
     }
   }
-  ctx.closePath();
-  ctx.fillStyle = rg(ctx, s, 0, 0, 0.5, [[0, '#ff8a6a'], [1, '#c82a2a']]);
-  ctx.fill();
-  ctx.strokeStyle = '#7a1414';
-  ctx.lineWidth = s * 0.028;
-  ctx.lineJoin = 'round';
-  ctx.stroke();
-  // bolitas en cada brazo
-  ctx.fillStyle = '#ffd0b0';
-  for (let i = 0; i < 5; i++) {
-    const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-    for (const r of [0.12, 0.22, 0.32]) {
-      ctx.beginPath();
-      ctx.arc(Math.cos(a) * r * s, Math.sin(a) * r * s, s * (0.03 - r * 0.04), 0, Math.PI * 2);
+  // reflejo iridiscente
+  ctx.fillStyle = rg(ctx, s, 0.3, 0.25, 0.6, [[0, 'rgba(255, 250, 220, 0.35)'], [1, 'rgba(255, 250, 220, 0)']]);
+  ctx.fillRect(0, 0, s, s);
+  finish(ctx, s, ST);
+}
+
+function chest(ctx: Ctx, s: number) {
+  face(ctx, s, '#4a2a12', ST);
+  const plank = (y0: number, y1: number, light: string, dark: string) => {
+    ctx.fillStyle = vg(ctx, s, light, dark, y0, y1);
+    ctx.fillRect(0, y0 * s, s, (y1 - y0) * s);
+    ctx.strokeStyle = 'rgba(40, 18, 4, 0.7)';
+    ctx.lineWidth = s * 0.014;
+    ctx.beginPath();
+    ctx.moveTo(0, y1 * s);
+    ctx.lineTo(s, y1 * s);
+    ctx.stroke();
+  };
+  // tapa abombada (dos tablones) y cuerpo (tres tablones)
+  plank(0, 0.18, '#b8743a', '#8a4a1a');
+  plank(0.18, 0.36, '#a8642a', '#7a3e14');
+  // tesoro asomando por la tapa entreabierta
+  ctx.fillStyle = vg(ctx, s, '#fff2a0', '#e8a810', 0.36, 0.48);
+  ctx.fillRect(0, 0.36 * s, s, 0.12 * s);
+  for (const [x, y] of [[0.12, 0.42], [0.3, 0.4], [0.5, 0.43], [0.68, 0.4], [0.88, 0.42], [0.2, 0.46], [0.6, 0.47], [0.8, 0.46]]) {
+    ell(ctx, s, x, y, 0.07, 0.04);
+    paint(ctx, s, '#ffd23a', '#8a5a00', 0.012);
+  }
+  plank(0.48, 0.66, '#b8743a', '#8a4a1a');
+  plank(0.66, 0.84, '#a8642a', '#7a3e14');
+  plank(0.84, 1.0, '#98582a', '#6a3410');
+  // herrajes dorados
+  for (const x of [0.12, 0.88]) {
+    ctx.fillStyle = vg(ctx, s, '#ffe680', '#c8900a', 0, 1);
+    ctx.fillRect((x - 0.05) * s, 0, 0.1 * s, s);
+    ctx.fillStyle = 'rgba(90, 50, 0, 0.6)';
+    for (const y of [0.1, 0.28, 0.58, 0.76, 0.92]) {
+      circ(ctx, s, x, y, 0.016);
       ctx.fill();
     }
   }
-  ctx.restore();
-  finish(ctx, s, ST);
-}
-
-function shell(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#f6dfa8', '#d9b46a'), ST);
-  // vieira abierta en abanico, ocupando todo
-  const cx = 0.5;
-  const cy = 0.86;
-  ctx.beginPath();
-  ctx.moveTo(cx * s, cy * s);
-  for (let i = 0; i <= 9; i++) {
-    const a = Math.PI + (i / 9) * Math.PI;
-    const r = 0.74;
-    const x = cx + Math.cos(a) * r * 0.66;
-    const y = cy + Math.sin(a) * r;
-    const pa = Math.PI + ((i - 0.5) / 9) * Math.PI;
-    if (i === 0) ctx.lineTo(x * s, y * s);
-    else ctx.quadraticCurveTo((cx + Math.cos(pa) * r * 0.74) * s, (cy + Math.sin(pa) * r * 1.08) * s, x * s, y * s);
-  }
-  ctx.closePath();
-  paint(ctx, s, rg(ctx, s, 0.5, 0.3, 0.7, [[0, '#f2dcff'], [0.5, '#b88af0'], [1, '#6f3fc0']]), '#3a1a6a', 0.03);
-  // costillas
-  ctx.strokeStyle = 'rgba(70, 30, 130, 0.55)';
-  ctx.lineWidth = s * 0.02;
-  for (let i = 1; i < 9; i++) {
-    const a = Math.PI + (i / 9) * Math.PI;
-    ctx.beginPath();
-    ctx.moveTo(cx * s, cy * s);
-    ctx.lineTo((cx + Math.cos(a) * 0.66 * 0.74) * s, (cy + Math.sin(a) * 0.74) * s);
-    ctx.stroke();
-  }
-  // bisagra
-  poly(ctx, s, [[0.36, 0.98], [0.4, 0.82], [0.6, 0.82], [0.64, 0.98]]);
-  paint(ctx, s, '#9a6ad8', '#3a1a6a', 0.025);
-  // perla
-  circ(ctx, s, 0.5, 0.78, 0.07);
-  ctx.fillStyle = rg(ctx, s, 0.48, 0.76, 0.08, [[0, '#ffffff'], [1, '#e6dcf0']]);
+  // cerradura
+  roundRect(ctx, s * 0.38, s * 0.48, s * 0.24, s * 0.26, s * 0.05);
+  paint(ctx, s, vg(ctx, s, '#ffe680', '#c8900a', 0.48, 0.74), '#5a3a00', 0.02);
+  circ(ctx, s, 0.5, 0.57, 0.035);
+  ctx.fillStyle = '#3a2200';
+  ctx.fill();
+  ctx.fillRect(s * 0.485, s * 0.57, s * 0.03, s * 0.09);
+  // destellos del oro
+  ctx.fillStyle = '#ffffff';
+  star(ctx, s * 0.36, s * 0.41, s * 0.05, s * 0.01, 4);
+  ctx.fill();
+  star(ctx, s * 0.76, s * 0.43, s * 0.035, s * 0.008, 4);
   ctx.fill();
   finish(ctx, s, ST);
 }
 
-function octopus(ctx: Ctx, s: number) {
-  water(ctx, s, '#2a7fd0');
-  // tentáculos
+function coral(ctx: Ctx, s: number) {
+  // anémona vista desde arriba: tentáculos que llegan a las esquinas
+  face(ctx, s, rg(ctx, s, 0.5, 0.5, 0.75, [[0, '#7a1446'], [1, '#3a0a26']]), ST);
   ctx.lineCap = 'round';
-  for (let i = 0; i < 6; i++) {
-    const x = 0.14 + i * 0.145;
+  const layer = (n: number, len: number, w: number, c0: string, c1: string, tip: string, rot: number) => {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + rot;
+      // alargar hacia las esquinas para llenar el cuadrado
+      const k = len / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a)));
+      const ex = 0.5 + Math.cos(a) * k * 0.5;
+      const ey = 0.5 + Math.sin(a) * k * 0.5;
+      const mx = 0.5 + Math.cos(a + 0.25) * k * 0.28;
+      const my = 0.5 + Math.sin(a + 0.25) * k * 0.28;
+      const g = ctx.createLinearGradient(s * 0.5, s * 0.5, ex * s, ey * s);
+      g.addColorStop(0, c0);
+      g.addColorStop(1, c1);
+      ctx.beginPath();
+      ctx.moveTo(s * 0.5, s * 0.5);
+      ctx.quadraticCurveTo(mx * s, my * s, ex * s, ey * s);
+      ctx.strokeStyle = '#4a0a2a';
+      ctx.lineWidth = s * (w + 0.02);
+      ctx.stroke();
+      ctx.strokeStyle = g;
+      ctx.lineWidth = s * w;
+      ctx.stroke();
+      circ(ctx, s, ex, ey, w * 0.62);
+      ctx.fillStyle = tip;
+      ctx.fill();
+    }
+  };
+  layer(22, 1.0, 0.075, '#c83a7a', '#ff6fb5', '#ffd0e8', 0);
+  layer(16, 0.62, 0.065, '#ff6fb5', '#ffa8d4', '#ffffff', 0.15);
+  // disco central con boca
+  circ(ctx, s, 0.5, 0.5, 0.13);
+  paint(ctx, s, rg(ctx, s, 0.47, 0.46, 0.14, [[0, '#ffe0a0'], [1, '#ff9a3a']]), '#4a0a2a', 0.02);
+  ctx.strokeStyle = 'rgba(160, 60, 0, 0.5)';
+  ctx.lineWidth = s * 0.012;
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
     ctx.beginPath();
-    ctx.moveTo(x * s, 0.55 * s);
-    ctx.bezierCurveTo((x + (i % 2 ? 0.12 : -0.12)) * s, 0.75 * s, (x - (i % 2 ? 0.1 : -0.1)) * s, 0.85 * s, (x + (i < 3 ? -0.08 : 0.08)) * s, 1.0 * s);
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = s * 0.12;
-    ctx.stroke();
-    ctx.strokeStyle = '#4f7fe8';
-    ctx.lineWidth = s * 0.08;
+    ctx.moveTo(s * (0.5 + Math.cos(a) * 0.04), s * (0.5 + Math.sin(a) * 0.04));
+    ctx.lineTo(s * (0.5 + Math.cos(a) * 0.12), s * (0.5 + Math.sin(a) * 0.12));
     ctx.stroke();
   }
-  // cabeza grande
-  ell(ctx, s, 0.5, 0.4, 0.38, 0.34);
-  paint(ctx, s, rg(ctx, s, 0.4, 0.28, 0.5, [[0, '#9cc0ff'], [0.6, '#3a6fe0'], [1, '#2448a8']]), INK, 0.03);
-  dots(ctx, s, 8, 6, 'rgba(20, 40, 120, 0.4)', [0.02, 0.035], [0.3, 0.12, 0.7, 0.3]);
-  eye(ctx, s, 0.38, 0.46, 0.075);
-  eye(ctx, s, 0.62, 0.46, 0.075);
-  // mejillas
-  ell(ctx, s, 0.26, 0.58, 0.05, 0.03);
-  ctx.fillStyle = 'rgba(255, 140, 190, 0.6)';
+  ell(ctx, s, 0.5, 0.5, 0.035, 0.02);
+  ctx.fillStyle = '#7a1a0a';
   ctx.fill();
-  ell(ctx, s, 0.74, 0.58, 0.05, 0.03);
-  ctx.fill();
+  finish(ctx, s, ST);
+}
+
+function crab(ctx: Ctx, s: number) {
+  face(ctx, s, vg(ctx, s, '#9fe6f0', '#4fb8d0'), ST);
+  const RED = rg(ctx, s, 0.4, 0.4, 0.7, [[0, '#ff8a6a'], [0.5, '#e8433f'], [1, '#a81a1a']]);
+  // patas a los lados
+  ctx.lineCap = 'round';
+  for (const side of [-1, 1]) {
+    for (const y of [0.56, 0.68, 0.8]) {
+      ctx.beginPath();
+      ctx.moveTo(s * (0.5 + side * 0.3), s * y);
+      ctx.lineTo(s * (0.5 + side * 0.5), s * (y + 0.04));
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = s * 0.075;
+      ctx.stroke();
+      ctx.strokeStyle = '#d8382f';
+      ctx.lineWidth = s * 0.045;
+      ctx.stroke();
+    }
+  }
+  // pinzas en las esquinas de arriba
+  for (const side of [-1, 1]) {
+    const cx = 0.5 + side * 0.36;
+    ell(ctx, s, cx, 0.2, 0.16, 0.15, side * 0.3);
+    paint(ctx, s, RED, INK, 0.025);
+    ctx.beginPath();
+    ctx.moveTo(s * cx, s * 0.2);
+    ctx.lineTo(s * (cx + side * 0.18), s * 0.08);
+    ctx.lineTo(s * (cx + side * 0.2), s * 0.2);
+    ctx.closePath();
+    ctx.fillStyle = vg(ctx, s, '#9fe6f0', '#7fd2e2', 0.05, 0.2);
+    ctx.fill();
+  }
+  // caparazón ancho
+  ctx.beginPath();
+  ctx.moveTo(s * 0.12, s * 0.58);
+  ctx.bezierCurveTo(s * 0.1, s * 0.3, s * 0.9, s * 0.3, s * 0.88, s * 0.58);
+  ctx.bezierCurveTo(s * 0.86, s * 0.96, s * 0.14, s * 0.96, s * 0.12, s * 0.58);
+  ctx.closePath();
+  paint(ctx, s, RED, INK, 0.03);
+  // ojos en pedúnculos
+  for (const x of [0.38, 0.62]) {
+    ctx.fillStyle = '#d8382f';
+    ctx.fillRect((x - 0.02) * s, 0.3 * s, 0.04 * s, 0.12 * s);
+    circ(ctx, s, x, 0.3, 0.075);
+    paint(ctx, s, '#ffffff', INK, 0.02);
+    circ(ctx, s, x + 0.012, 0.31, 0.038);
+    ctx.fillStyle = INK;
+    ctx.fill();
+    circ(ctx, s, x - 0.008, 0.29, 0.014);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+  }
+  // sonrisa, mejillas y pintitas
+  ctx.beginPath();
+  ctx.arc(s * 0.5, s * 0.62, s * 0.09, 0.2, Math.PI - 0.2);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = s * 0.022;
+  ctx.stroke();
+  for (const x of [0.3, 0.7]) {
+    ell(ctx, s, x, 0.66, 0.05, 0.03);
+    ctx.fillStyle = 'rgba(255, 180, 200, 0.6)';
+    ctx.fill();
+  }
+  for (const [x, y] of [[0.36, 0.78], [0.64, 0.78], [0.5, 0.84]]) {
+    circ(ctx, s, x, y, 0.018);
+    ctx.fillStyle = 'rgba(120, 10, 10, 0.4)';
+    ctx.fill();
+  }
+  finish(ctx, s, ST);
+}
+
+function tentacle(ctx: Ctx, s: number) {
+  face(ctx, s, vg(ctx, s, '#2a2a6a', '#140a3a'), ST);
+  // curva del tentáculo (bezier cúbica) que cruza todo el bloque y se enrosca
+  const P = [[-0.1, 1.1], [0.1, 0.1], [1.15, 0.25], [0.62, 0.62]];
+  const at = (t: number): [number, number] => {
+    const u = 1 - t;
+    const a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
+    return [a * P[0][0] + b * P[1][0] + c * P[2][0] + d * P[3][0], a * P[0][1] + b * P[1][1] + c * P[2][1] + d * P[3][1]];
+  };
+  const rad = (t: number) => 0.2 * (1 - t * 0.78);
+  // contorno y cuerpo
+  for (const pass of [0, 1]) {
+    for (let t = 0; t <= 1.0001; t += 0.012) {
+      const [x, y] = at(t);
+      circ(ctx, s, x, y, rad(t) + (pass === 0 ? 0.018 : 0));
+      ctx.fillStyle = pass === 0 ? INK : rg(ctx, s, x - rad(t) * 0.3, y - rad(t) * 0.4, rad(t) * 1.3, [[0, '#d6b0ff'], [0.6, '#a070e0'], [1, '#6a3ab0']]);
+      ctx.fill();
+    }
+  }
+  // ventosas en el lado interior
+  for (let t = 0.06; t < 0.95; t += 0.09) {
+    const [x, y] = at(t);
+    const [x2, y2] = at(t + 0.01);
+    const dx = x2 - x;
+    const dy = y2 - y;
+    const l = Math.hypot(dx, dy) || 1;
+    const nx = dy / l;
+    const ny = -dx / l;
+    const r = rad(t);
+    const sx = x + nx * r * 0.45;
+    const sy = y + ny * r * 0.45;
+    circ(ctx, s, sx, sy, r * 0.38);
+    paint(ctx, s, '#ffc8e6', '#7a3a90', 0.012);
+    circ(ctx, s, sx, sy, r * 0.17);
+    ctx.fillStyle = '#c87ab0';
+    ctx.fill();
+  }
+  // burbujitas
+  for (const [x, y, r] of [[0.82, 0.86, 0.04], [0.9, 0.72, 0.025], [0.2, 0.2, 0.03]]) {
+    circ(ctx, s, x, y, r);
+    ctx.strokeStyle = 'rgba(200, 230, 255, 0.7)';
+    ctx.lineWidth = s * 0.012;
+    ctx.stroke();
+  }
+  finish(ctx, s, ST);
+}
+
+function waves(ctx: Ctx, s: number) {
+  face(ctx, s, '#1f5fc8', ST);
+  // patrón de olas en abanico (filas que se superponen)
+  const R = 0.2;
+  const rings = ['#ffffff', '#3a86ff', '#bfe0ff', '#2a6ae0', '#ffffff', '#1f5fc8'];
+  for (let row = 0; row < 8; row++) {
+    const y = row * 0.15;
+    const off = row % 2 ? R : 0;
+    for (let x = -off; x < 1.3; x += R * 2) {
+      rings.forEach((c, i) => {
+        circ(ctx, s, x, y, R * (1 - i * 0.16));
+        ctx.fillStyle = c;
+        ctx.fill();
+      });
+      circ(ctx, s, x, y, R);
+      ctx.strokeStyle = 'rgba(10, 40, 110, 0.5)';
+      ctx.lineWidth = s * 0.012;
+      ctx.stroke();
+    }
+  }
   finish(ctx, s, ST);
 }
 
 function turtle(ctx: Ctx, s: number) {
-  water(ctx, s, '#3fb8c8');
-  // aletas
-  for (const [x, y, a] of [[0.16, 0.3, -0.7], [0.84, 0.3, 0.7], [0.2, 0.8, 0.6], [0.8, 0.8, -0.6]]) {
-    ell(ctx, s, x, y, 0.15, 0.07, a);
-    paint(ctx, s, '#9adf8a', INK, 0.022);
-  }
-  // cabeza
-  ell(ctx, s, 0.5, 0.1, 0.1, 0.1);
-  paint(ctx, s, '#9adf8a', INK, 0.022);
-  // caparazón grande
-  ell(ctx, s, 0.5, 0.55, 0.36, 0.4);
-  paint(ctx, s, rg(ctx, s, 0.42, 0.4, 0.5, [[0, '#8ae0a8'], [0.6, '#3fbf7a'], [1, '#22804a']]), INK, 0.03);
-  // placas hexagonales
-  ctx.strokeStyle = 'rgba(15, 70, 40, 0.7)';
-  ctx.lineWidth = s * 0.02;
-  const hex = (x: number, y: number, r: number) => {
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const a = (i * Math.PI) / 3 + Math.PI / 6;
-      const px = (x + Math.cos(a) * r) * s;
-      const py = (y + Math.sin(a) * r) * s;
-      if (i) ctx.lineTo(px, py);
-      else ctx.moveTo(px, py);
+  face(ctx, s, '#1f5a2a', ST);
+  // escudos hexagonales del caparazón, de cerca
+  const R = 0.24;
+  const W = Math.sqrt(3) * R;
+  for (let row = -1; row < 4; row++) {
+    for (let col = -1; col < 4; col++) {
+      const cx = col * W + (row % 2 ? W / 2 : 0);
+      const cy = row * R * 1.5 + 0.12;
+      for (let k = 0; k < 3; k++) {
+        const r = R * (0.92 - k * 0.24);
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI) / 3 + Math.PI / 6;
+          const x = (cx + Math.cos(a) * r) * s;
+          const y = (cy + Math.sin(a) * r) * s;
+          if (i) ctx.lineTo(x, y);
+          else ctx.moveTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = k === 0 ? rg(ctx, s, cx - 0.06, cy - 0.06, R, [[0, '#9ae68a'], [1, '#3a9a4a']]) : k === 1 ? 'rgba(140, 110, 40, 0.35)' : 'rgba(200, 230, 140, 0.45)';
+        ctx.fill();
+        if (k === 0) {
+          ctx.strokeStyle = '#143a1a';
+          ctx.lineWidth = s * 0.03;
+          ctx.stroke();
+        }
+      }
     }
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(200, 240, 160, 0.35)';
-    ctx.fill();
-    ctx.stroke();
-  };
-  hex(0.5, 0.55, 0.11);
-  for (let i = 0; i < 6; i++) {
-    const a = (i * Math.PI) / 3;
-    hex(0.5 + Math.cos(a) * 0.2, 0.55 + Math.sin(a) * 0.22, 0.08);
   }
   finish(ctx, s, ST);
 }
 
 function rock(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#7f8f98', '#3f4c55'), { ...ST, rad: 0.1 });
-  // musgo y percebes
-  dots(ctx, s, 31, 10, 'rgba(70, 140, 90, 0.45)', [0.03, 0.06]);
-  const r = [[0.3, 0.3], [0.68, 0.42], [0.42, 0.7], [0.75, 0.75]];
-  for (const [x, y] of r) {
-    circ(ctx, s, x, y, 0.065);
-    paint(ctx, s, '#d8d0c0', '#3a3a3a', 0.015);
-    circ(ctx, s, x, y, 0.025);
+  face(ctx, s, vg(ctx, s, '#7f8f98', '#3a4650'), { ...ST, rad: 0.1 });
+  // vetas
+  ctx.strokeStyle = 'rgba(30, 40, 50, 0.35)';
+  ctx.lineWidth = s * 0.02;
+  ctx.beginPath();
+  ctx.moveTo(0, s * 0.3);
+  ctx.lineTo(s * 0.4, s * 0.42);
+  ctx.lineTo(s, s * 0.36);
+  ctx.moveTo(0, s * 0.74);
+  ctx.lineTo(s * 0.6, s * 0.68);
+  ctx.lineTo(s, s * 0.8);
+  ctx.stroke();
+  // algas pegadas
+  const r = rng(31);
+  for (let i = 0; i < 8; i++) {
+    circ(ctx, s, r(), r(), 0.04 + r() * 0.04);
+    ctx.fillStyle = 'rgba(70, 150, 90, 0.4)';
+    ctx.fill();
+  }
+  // percebes (conos con abertura)
+  for (const [x, y] of [[0.26, 0.22], [0.7, 0.18], [0.5, 0.52], [0.2, 0.8], [0.78, 0.74]]) {
+    circ(ctx, s, x, y, 0.085);
+    paint(ctx, s, rg(ctx, s, x - 0.03, y - 0.03, 0.1, [[0, '#f4ece0'], [1, '#b0a898']]), '#3a3a3a', 0.014);
+    ell(ctx, s, x, y, 0.035, 0.02);
     ctx.fillStyle = '#4a4a4a';
     ctx.fill();
   }
@@ -312,12 +360,12 @@ function rock(ctx: Ctx, s: number) {
 }
 
 const DRAW: Record<Kind, (ctx: Ctx, s: number) => void> = {
-  clown,
-  puffer,
-  jelly,
-  starfish,
-  shell,
-  octopus,
+  scales,
+  chest,
+  coral,
+  crab,
+  tentacle,
+  waves,
   turtle,
   stone: rock,
 };
@@ -340,12 +388,12 @@ const ocean: SkinDef = {
   id: 'ocean',
   name: { es: 'Océano', en: 'Ocean' },
   description: {
-    es: 'Peces, medusas, estrellas de mar y conchas en el fondo del mar. ¡Explotan en burbujas!',
-    en: 'Fish, jellyfish, starfish and shells under the sea. They pop into bubbles!',
+    es: 'Escamas, tesoros, anémonas, cangrejos, pulpos, olas y tortugas. ¡Explotan en burbujas!',
+    en: 'Scales, treasure, anemones, crabs, octopus, waves and turtles. They pop into bubbles!',
   },
   price: 1100,
   order: 5.1,
-  blocks: [C.clown, C.puffer, C.jelly, C.starfish, C.shell, C.octopus, C.turtle, C.stone],
+  blocks: [C.scales, C.chest, C.coral, C.crab, C.tentacle, C.waves, C.turtle, C.stone],
   ui: {
     bg: '#062a4a',
     panel: 'rgba(8, 48, 84, 0.9)',
@@ -356,7 +404,7 @@ const ocean: SkinDef = {
     accent2: '#4fd6ff',
     good: '#4fe0a0',
     danger: '#ff6a5a',
-    radius: 20,
+    radius: 18,
     glass: true,
     font: '"Segoe UI Rounded", "Arial Rounded MT Bold", "Nunito", "Segoe UI", system-ui, sans-serif',
     titleGlow: '0 0 14px rgba(80, 200, 255, 0.8)',
@@ -367,75 +415,113 @@ const ocean: SkinDef = {
 
   drawBackground(ctx, w, h) {
     const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, '#1aa0d8');
-    g.addColorStop(0.45, '#0a5a96');
-    g.addColorStop(1, '#03203f');
+    g.addColorStop(0, '#1ab0e0');
+    g.addColorStop(0.4, '#0a6aa8');
+    g.addColorStop(1, '#021a38');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
     // rayos de luz
     ctx.globalCompositeOperation = 'lighter';
-    for (const [x, sp] of [[0.15, 0.1], [0.4, 0.14], [0.62, 0.08], [0.85, 0.12]]) {
-      const lg = ctx.createLinearGradient(0, 0, 0, h * 0.85);
-      lg.addColorStop(0, 'rgba(200, 245, 255, 0.22)');
-      lg.addColorStop(1, 'rgba(200, 245, 255, 0)');
+    for (const [x, sp, a] of [[0.12, 0.1, 0.16], [0.36, 0.16, 0.22], [0.58, 0.06, 0.14], [0.82, 0.14, 0.2]]) {
+      const lg = ctx.createLinearGradient(0, 0, 0, h * 0.9);
+      lg.addColorStop(0, `rgba(210, 248, 255, ${a})`);
+      lg.addColorStop(1, 'rgba(210, 248, 255, 0)');
       ctx.fillStyle = lg;
       ctx.beginPath();
-      ctx.moveTo(w * (x - 0.03), 0);
-      ctx.lineTo(w * (x + 0.03), 0);
-      ctx.lineTo(w * (x + sp + 0.1), h * 0.85);
-      ctx.lineTo(w * (x + sp - 0.06), h * 0.85);
+      ctx.moveTo(w * (x - 0.025), 0);
+      ctx.lineTo(w * (x + 0.035), 0);
+      ctx.lineTo(w * (x + sp + 0.12), h * 0.9);
+      ctx.lineTo(w * (x + sp - 0.06), h * 0.9);
       ctx.closePath();
       ctx.fill();
     }
     ctx.globalCompositeOperation = 'source-over';
-    // cáusticas en la superficie
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    // superficie ondulada con cáusticas
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
     ctx.lineWidth = 2;
-    for (let y = 12; y < h * 0.15; y += 14) {
+    for (let y = 10; y < h * 0.14; y += 12) {
       ctx.beginPath();
-      for (let x = 0; x <= w; x += 20) ctx.lineTo(x, y + Math.sin(x * 0.05 + y) * 4);
+      for (let x = 0; x <= w; x += 12) ctx.lineTo(x, y + Math.sin(x * 0.045 + y * 0.7) * 4);
       ctx.stroke();
     }
-    // arena y algas
-    const sandY = h * 0.92;
-    ctx.fillStyle = '#c9a868';
+    // kelp: cintas onduladas rellenas
+    const r = rng(14);
+    for (let i = 0; i < 7; i++) {
+      const x0 = (i / 6) * w + (r() - 0.5) * 40;
+      const top = h * (0.55 + r() * 0.2);
+      const col = i % 2 ? '#1f7a4a' : '#2a9a5a';
+      ctx.beginPath();
+      ctx.moveTo(x0 - 7, h);
+      for (let y = h; y > top; y -= 10) ctx.lineTo(x0 - 7 + Math.sin(y * 0.03 + i) * 12, y);
+      for (let y = top; y < h; y += 10) ctx.lineTo(x0 + 7 + Math.sin(y * 0.03 + i) * 12, y);
+      ctx.closePath();
+      ctx.fillStyle = col;
+      ctx.globalAlpha = 0.75;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    // arena con ondas
+    const sandY = h * 0.93;
+    const sg = ctx.createLinearGradient(0, sandY, 0, h);
+    sg.addColorStop(0, '#d8b878');
+    sg.addColorStop(1, '#a8884a');
+    ctx.fillStyle = sg;
     ctx.beginPath();
     ctx.moveTo(0, h);
-    for (let x = 0; x <= w; x += 24) ctx.lineTo(x, sandY + Math.sin(x * 0.02) * 8);
+    for (let x = 0; x <= w; x += 16) ctx.lineTo(x, sandY + Math.sin(x * 0.02) * 6);
     ctx.lineTo(w, h);
     ctx.closePath();
     ctx.fill();
-    ctx.lineCap = 'round';
-    for (let i = 0; i < 9; i++) {
-      const x = ((i * 137) % 100) / 100 * w;
-      ctx.strokeStyle = i % 2 ? 'rgba(40, 140, 80, 0.75)' : 'rgba(60, 170, 90, 0.75)';
-      ctx.lineWidth = 6;
+    ctx.strokeStyle = 'rgba(120, 90, 40, 0.3)';
+    ctx.lineWidth = 2;
+    for (let k = 1; k < 4; k++) {
       ctx.beginPath();
-      ctx.moveTo(x, h);
-      for (let k = 1; k <= 6; k++) ctx.lineTo(x + Math.sin(k + i) * 10, h - k * h * 0.035);
+      for (let x = 0; x <= w; x += 16) ctx.lineTo(x, sandY + k * 10 + Math.sin(x * 0.04 + k) * 3);
+      ctx.stroke();
+    }
+    // burbujas fijas
+    for (let i = 0; i < 26; i++) {
+      ctx.beginPath();
+      ctx.arc(r() * w, r() * h * 0.85, 2 + r() * 5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(220, 245, 255, 0.35)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
   },
 
   drawBoard(ctx, size, cell) {
-    const pad = cell * 0.22;
+    const pad = cell * 0.24;
+    // pecera: marco de bronce con remaches y vidrio azulado
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 20, 50, 0.5)';
+    ctx.shadowColor = 'rgba(0, 20, 50, 0.55)';
     ctx.shadowBlur = cell * 0.5;
-    roundRect(ctx, -pad, -pad, size + pad * 2, size + pad * 2, cell * 0.45);
-    ctx.fillStyle = 'rgba(4, 36, 70, 0.75)';
+    ctx.shadowOffsetY = cell * 0.1;
+    roundRect(ctx, -pad, -pad, size + pad * 2, size + pad * 2, cell * 0.28);
+    ctx.fillStyle = '#8a5a2a';
     ctx.fill();
     ctx.restore();
-    roundRect(ctx, -pad, -pad, size + pad * 2, size + pad * 2, cell * 0.45);
-    ctx.strokeStyle = 'rgba(160, 230, 255, 0.5)';
-    ctx.lineWidth = Math.max(1.5, cell * 0.05);
-    ctx.stroke();
+    const brass = ctx.createLinearGradient(-pad, -pad, size + pad, size + pad);
+    brass.addColorStop(0, '#f0c070');
+    brass.addColorStop(0.5, '#b07a30');
+    brass.addColorStop(1, '#6a4010');
+    roundRect(ctx, -pad, -pad, size + pad * 2, size + pad * 2, cell * 0.28);
+    ctx.fillStyle = brass;
+    ctx.fill();
+    for (const [x, y] of [[-pad / 2, -pad / 2], [size + pad / 2, -pad / 2], [-pad / 2, size + pad / 2], [size + pad / 2, size + pad / 2], [size / 2, -pad / 2], [size / 2, size + pad / 2], [-pad / 2, size / 2], [size + pad / 2, size / 2]]) {
+      ctx.beginPath();
+      ctx.arc(x, y, cell * 0.05, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffe0a0';
+      ctx.fill();
+    }
+    roundRect(ctx, -pad * 0.2, -pad * 0.2, size + pad * 0.4, size + pad * 0.4, cell * 0.12);
+    ctx.fillStyle = '#063a66';
+    ctx.fill();
     cells(ctx, cell, (x, y, px, py) => {
       const i = cell * 0.06;
-      roundRect(ctx, px + i, py + i, cell - i * 2, cell - i * 2, cell * 0.2);
-      ctx.fillStyle = (x + y) % 2 ? 'rgba(20, 90, 140, 0.55)' : 'rgba(14, 76, 124, 0.55)';
+      roundRect(ctx, px + i, py + i, cell - i * 2, cell - i * 2, cell * 0.16);
+      ctx.fillStyle = (x + y) % 2 ? '#0c5590' : '#0a4c84';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(180, 235, 255, 0.12)';
+      ctx.strokeStyle = 'rgba(180, 235, 255, 0.14)';
       ctx.lineWidth = Math.max(1, cell * 0.02);
       ctx.stroke();
     });

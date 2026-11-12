@@ -1,24 +1,24 @@
 import { drawGemIcon, roundRect, shade, star } from '../draw';
-import { cells, circ, dots, ell, face, finish, ghostTile, kinds, paint, rg, rng, vg } from '../tiles';
+import { cells, circ, ell, face, finish, ghostTile, kinds, paint, rg, rng, vg } from '../tiles';
 import type { Ctx, SkinDef } from '../types';
 
 /**
  * CANDY — cada bloque es una golosina que llena todo el cuadrado:
- *   rosa → piruleta en espiral · turquesa → caramelo envuelto · amarillo → osito de goma
- *   rojo → gominola azucarada · violeta → caramelo duro facetado · naranja → gusanito ácido
- *   verde → pastilla de menta · piedra → terrón de azúcar
+ *   rosa → piruleta en espiral · turquesa → caramelo envuelto · amarillo → panal de caramelo
+ *   rojo → bastón de caramelo a rayas · violeta → caramelo duro de corte cuadrado
+ *   naranja → gomita azucarada · verde → tira ácida · piedra → tableta de chocolate
  * Fondo de rayas rosa y turquesa; explota en confeti de azúcar.
  */
 
 const C = {
   lolly: '#ff5fa2',
   wrapped: '#2ed3c6',
-  bear: '#ffc23a',
-  gumdrop: '#ff4757',
-  gem: '#a66cff',
-  worm: '#ff8f3a',
-  mint: '#6fdc5a',
-  stone: '#e8dce6',
+  honey: '#ffc23a',
+  cane: '#ff4757',
+  cushion: '#a66cff',
+  jelly: '#ff8f3a',
+  belt: '#6fdc5a',
+  stone: '#7a4a2a',
 };
 type Kind = keyof typeof C;
 const kindOf = kinds(C, 'lolly');
@@ -106,185 +106,183 @@ function wrapped(ctx: Ctx, s: number) {
   finish(ctx, s, ST);
 }
 
-function bear(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#fff4c8', '#ffd98a'), ST);
-  const fill = rg(ctx, s, 0.45, 0.4, 0.6, [[0, 'rgba(255, 240, 170, 0.95)'], [0.6, 'rgba(255, 194, 58, 0.95)'], [1, 'rgba(220, 140, 10, 0.95)']]);
-  const parts: Array<[number, number, number, number]> = [
-    [0.27, 0.12, 0.08, 0.08], // orejas
-    [0.73, 0.12, 0.08, 0.08],
-    [0.2, 0.62, 0.1, 0.13], // brazos
-    [0.8, 0.62, 0.1, 0.13],
-    [0.3, 0.9, 0.12, 0.1], // pies
-    [0.7, 0.9, 0.12, 0.1],
-    [0.5, 0.66, 0.27, 0.27], // panza
-    [0.5, 0.3, 0.24, 0.2], // cabeza
-  ];
-  for (const [x, y, rx, ry] of parts) {
-    ell(ctx, s, x, y, rx, ry);
-    paint(ctx, s, fill, '#a8620a', 0.022);
-  }
-  // hocico y ojos
-  ell(ctx, s, 0.5, 0.36, 0.08, 0.055);
-  ctx.fillStyle = 'rgba(255, 250, 220, 0.7)';
-  ctx.fill();
-  ctx.fillStyle = '#8a4a08';
-  for (const x of [0.42, 0.58]) {
-    circ(ctx, s, x, 0.27, 0.022);
-    ctx.fill();
-  }
-  circ(ctx, s, 0.5, 0.34, 0.018);
-  ctx.fill();
-  ell(ctx, s, 0.5, 0.66, 0.14, 0.14);
-  ctx.fillStyle = 'rgba(255, 250, 220, 0.35)';
-  ctx.fill();
-  gloss(ctx, s, 0.38, 0.22, 0.06);
-  finish(ctx, s, ST);
-}
-
-function gumdrop(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#ffd2d8', '#ff9aa8'), ST);
-  // gominola en cúpula enorme
-  ctx.beginPath();
-  ctx.moveTo(0.04 * s, 0.94 * s);
-  ctx.bezierCurveTo(0.04 * s, 0.1 * s, 0.96 * s, 0.1 * s, 0.96 * s, 0.94 * s);
-  ctx.closePath();
-  paint(ctx, s, rg(ctx, s, 0.38, 0.35, 0.7, [[0, '#ff9aa8'], [0.5, '#ff4757'], [1, '#b81a2c']]), '#7a0a1a', 0.03);
-  // cristales de azúcar
-  const r = rng(17);
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(0.04 * s, 0.94 * s);
-  ctx.bezierCurveTo(0.04 * s, 0.1 * s, 0.96 * s, 0.1 * s, 0.96 * s, 0.94 * s);
-  ctx.closePath();
-  ctx.clip();
-  for (let i = 0; i < 46; i++) {
-    const x = r();
-    const y = 0.25 + r() * 0.72;
-    ctx.fillStyle = r() > 0.4 ? 'rgba(255,255,255,0.85)' : 'rgba(255,220,225,0.7)';
+/** Cristales de azúcar sueltos sobre toda la cara. */
+function sugarCoat(ctx: Ctx, s: number, seed: number, n: number) {
+  const r = rng(seed);
+  for (let i = 0; i < n; i++) {
     ctx.save();
-    ctx.translate(x * s, y * s);
+    ctx.translate(r() * s, r() * s);
     ctx.rotate(r() * Math.PI);
-    const z = s * (0.014 + r() * 0.012);
+    const z = s * (0.014 + r() * 0.014);
+    ctx.fillStyle = r() > 0.35 ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)';
     ctx.fillRect(-z / 2, -z / 2, z, z);
     ctx.restore();
   }
-  ctx.restore();
-  gloss(ctx, s, 0.32, 0.42, 0.1);
+}
+
+function honey(ctx: Ctx, s: number) {
+  // panal de caramelo (honeycomb): celdas hexagonales a todo el cuadrado
+  face(ctx, s, vg(ctx, s, '#ffd86a', '#d88a10'), ST);
+  const R = 0.13;
+  const W = Math.sqrt(3) * R;
+  for (let row = -1; row < 7; row++)
+    for (let col = -1; col < 6; col++) {
+      const cx = col * W + (row % 2 ? W / 2 : 0);
+      const cy = row * R * 1.5;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3 + Math.PI / 6;
+        const x = (cx + Math.cos(a) * R * 0.78) * s;
+        const y = (cy + Math.sin(a) * R * 0.78) * s;
+        if (i) ctx.lineTo(x, y);
+        else ctx.moveTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = rg(ctx, s, cx + 0.03, cy + 0.04, R, [[0, '#a85a08'], [0.7, '#e8961a'], [1, '#ffcf5a']]);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 245, 200, 0.75)';
+      ctx.lineWidth = s * 0.014;
+      ctx.stroke();
+    }
+  gloss(ctx, s, 0.3, 0.24, 0.16);
   finish(ctx, s, ST);
 }
 
-function gem(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#d6bbff', '#7a3fe0'), ST);
-  // caramelo duro facetado: octógono con facetas
-  const c = 0.5;
-  const R = 0.46;
-  const r = 0.26;
-  const P = (rad: number, i: number): [number, number] => [c + Math.cos((i * Math.PI) / 4 + Math.PI / 8) * rad, c + Math.sin((i * Math.PI) / 4 + Math.PI / 8) * rad];
-  const cols = ['#e2ccff', '#c49bff', '#a66cff', '#8a4ef0', '#6a2fc0', '#8a4ef0', '#b88aff', '#d6bbff'];
-  for (let i = 0; i < 8; i++) {
-    const [a, b, d, e] = [P(R, i), P(R, i + 1), P(r, i + 1), P(r, i)];
-    ctx.beginPath();
-    ctx.moveTo(a[0] * s, a[1] * s);
-    ctx.lineTo(b[0] * s, b[1] * s);
-    ctx.lineTo(d[0] * s, d[1] * s);
-    ctx.lineTo(e[0] * s, e[1] * s);
-    ctx.closePath();
-    paint(ctx, s, cols[i], '#4a1a8a', 0.015);
-  }
-  ctx.beginPath();
-  for (let i = 0; i < 8; i++) {
-    const p = P(r, i);
-    if (i) ctx.lineTo(p[0] * s, p[1] * s);
-    else ctx.moveTo(p[0] * s, p[1] * s);
-  }
-  ctx.closePath();
-  paint(ctx, s, rg(ctx, s, 0.45, 0.42, 0.3, [[0, '#ffffff'], [0.4, '#c9a2ff'], [1, '#8a4ef0']]), '#4a1a8a', 0.015);
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  star(ctx, 0.4 * s, 0.4 * s, s * 0.08, s * 0.015, 4);
-  ctx.fill();
-  finish(ctx, s, ST);
-}
-
-function worm(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#fff0dc', '#ffd2a8'), ST);
-  // gusanito en S con franjas
-  ctx.lineCap = 'round';
-  const path = () => {
-    ctx.beginPath();
-    ctx.moveTo(0.14 * s, 0.2 * s);
-    ctx.bezierCurveTo(0.9 * s, 0.05 * s, 0.95 * s, 0.5 * s, 0.5 * s, 0.5 * s);
-    ctx.bezierCurveTo(0.05 * s, 0.5 * s, 0.1 * s, 0.95 * s, 0.86 * s, 0.82 * s);
-  };
-  path();
-  ctx.strokeStyle = '#8a3a0a';
-  ctx.lineWidth = s * 0.27;
-  ctx.stroke();
-  const bands = ['#ff4757', '#ff8f3a', '#ffd23a'];
-  bands.forEach((col, i) => {
-    path();
-    ctx.strokeStyle = col;
-    ctx.lineWidth = s * (0.23 - i * 0.075);
-    ctx.stroke();
-  });
-  // azúcar ácida
-  dots(ctx, s, 5, 40, 'rgba(255,255,255,0.85)', [0.006, 0.012], [0.08, 0.08, 0.92, 0.92]);
-  // carita
-  ctx.fillStyle = '#3a1a0a';
-  circ(ctx, s, 0.82, 0.78, 0.02);
-  ctx.fill();
-  circ(ctx, s, 0.88, 0.84, 0.02);
-  ctx.fill();
-  finish(ctx, s, ST);
-}
-
-function mint(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#e4ffdc', '#9ae88a'), ST);
-  // pastilla redonda con rayos verde/blanco
-  circ(ctx, s, 0.5, 0.5, 0.44);
-  paint(ctx, s, '#ffffff', '#1f7a2a', 0.03);
+function cane(ctx: Ctx, s: number) {
+  // rayas de bastón de caramelo en diagonal con volumen
+  face(ctx, s, '#ffffff', ST);
   ctx.save();
-  circ(ctx, s, 0.5, 0.5, 0.42);
-  ctx.clip();
   ctx.translate(s / 2, s / 2);
-  for (let i = 0; i < 8; i++) {
-    ctx.rotate(Math.PI / 4);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.arc(0, 0, s * 0.42, -0.2, 0.2);
-    ctx.closePath();
-    ctx.fillStyle = '#4fc83a';
-    ctx.fill();
+  ctx.rotate(-Math.PI / 4);
+  for (let x = -s; x < s; x += s * 0.28) {
+    ctx.fillStyle = '#ff3a4a';
+    ctx.fillRect(x, -s, s * 0.14, s * 2);
+    ctx.fillStyle = 'rgba(255, 140, 150, 0.9)';
+    ctx.fillRect(x + s * 0.17, -s, s * 0.035, s * 2);
   }
   ctx.restore();
-  circ(ctx, s, 0.5, 0.5, 0.1);
-  paint(ctx, s, '#ffffff', 'rgba(31,122,42,0.4)', 0.012);
-  ctx.fillStyle = rg(ctx, s, 0.5, 0.5, 0.45, [[0.6, 'rgba(0,0,0,0)'], [1, 'rgba(20,90,30,0.3)']]);
-  circ(ctx, s, 0.5, 0.5, 0.44);
-  ctx.fill();
-  gloss(ctx, s);
+  // volumen: brillo en una franja y sombra en el borde
+  ctx.fillStyle = rg(ctx, s, 0.5, 0.5, 0.72, [[0.55, 'rgba(0,0,0,0)'], [1, 'rgba(140, 0, 30, 0.35)']]);
+  ctx.fillRect(0, 0, s, s);
+  ctx.save();
+  ctx.translate(s / 2, s / 2);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillRect(-s, -s * 0.3, s * 2, s * 0.08);
+  ctx.restore();
   finish(ctx, s, ST);
 }
 
-function sugar(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#ffffff', '#d8cbd6'), { ...ST, rad: 0.08 });
-  const r = rng(3);
-  for (let i = 0; i < 70; i++) {
-    ctx.fillStyle = r() > 0.5 ? 'rgba(180, 160, 180, 0.35)' : 'rgba(255,255,255,0.9)';
-    const z = s * (0.015 + r() * 0.02);
-    ctx.fillRect(r() * s, r() * s, z, z);
+function cushion(ctx: Ctx, s: number) {
+  // caramelo duro de corte cuadrado: biseles en los cuatro lados y mesa central
+  face(ctx, s, '#7a3fe0', ST);
+  const o = 0.05;
+  const k = 0.27;
+  const bevels: Array<[Array<[number, number]>, string]> = [
+    [[[o, o], [1 - o, o], [1 - k, k], [k, k]], '#d8bfff'],
+    [[[1 - o, o], [1 - o, 1 - o], [1 - k, 1 - k], [1 - k, k]], '#8a4ef0'],
+    [[[1 - o, 1 - o], [o, 1 - o], [k, 1 - k], [1 - k, 1 - k]], '#5a24b0'],
+    [[[o, 1 - o], [o, o], [k, k], [k, 1 - k]], '#b88aff'],
+  ];
+  for (const [pts, c] of bevels) {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x * s, y * s) : ctx.moveTo(x * s, y * s)));
+    ctx.closePath();
+    ctx.fillStyle = c;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(60, 10, 120, 0.4)';
+    ctx.lineWidth = s * 0.012;
+    ctx.stroke();
   }
-  finish(ctx, s, { ...ST, rad: 0.08, shine: 0.15 });
+  roundRect(ctx, k * s, k * s, (1 - 2 * k) * s, (1 - 2 * k) * s, s * 0.03);
+  ctx.fillStyle = rg(ctx, s, 0.42, 0.42, 0.35, [[0, '#f2e6ff'], [0.5, '#a66cff'], [1, '#7a3fe0']]);
+  ctx.fill();
+  // remolino interior translúcido
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = s * 0.02;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let t = 0; t <= 1; t += 0.05) {
+    const a = t * Math.PI * 3;
+    const r = t * s * 0.18;
+    const x = s / 2 + Math.cos(a) * r;
+    const y = s / 2 + Math.sin(a) * r;
+    if (t === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  star(ctx, s * 0.2, s * 0.17, s * 0.06, s * 0.012, 4);
+  ctx.fill();
+  finish(ctx, s, ST);
+}
+
+function jelly(ctx: Ctx, s: number) {
+  // gomita cuadrada de naranja, translúcida y azucarada
+  face(ctx, s, rg(ctx, s, 0.45, 0.45, 0.75, [[0, '#ffd08a'], [0.5, '#ff8f3a'], [1, '#c8500a']]), ST);
+  // núcleo luminoso y biseles suaves
+  roundRect(ctx, s * 0.2, s * 0.2, s * 0.6, s * 0.6, s * 0.14);
+  ctx.fillStyle = 'rgba(255, 230, 170, 0.35)';
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillRect(0, 0, s, s * 0.12);
+  ctx.fillRect(0, 0, s * 0.12, s);
+  ctx.fillStyle = 'rgba(140, 40, 0, 0.25)';
+  ctx.fillRect(0, s * 0.88, s, s * 0.12);
+  ctx.fillRect(s * 0.88, 0, s * 0.12, s);
+  sugarCoat(ctx, s, 17, 70);
+  finish(ctx, s, ST);
+}
+
+function belt(ctx: Ctx, s: number) {
+  // tira ácida en capas: verde, blanca y verde oscuro, cubierta de azúcar
+  face(ctx, s, '#3fae3a', ST);
+  const band = (y0: number, y1: number, top: string, bottom: string) => {
+    ctx.beginPath();
+    ctx.moveTo(0, y0 * s);
+    for (let x = 0; x <= 1.0001; x += 0.1) ctx.lineTo(x * s, (y0 + Math.sin(x * 9) * 0.015) * s);
+    ctx.lineTo(s, y1 * s);
+    for (let x = 1; x >= -0.0001; x -= 0.1) ctx.lineTo(x * s, (y1 + Math.sin(x * 9) * 0.015) * s);
+    ctx.closePath();
+    ctx.fillStyle = vg(ctx, s, top, bottom, y0, y1);
+    ctx.fill();
+  };
+  band(-0.05, 0.36, '#b8f59a', '#6fdc5a');
+  band(0.36, 0.58, '#ffffff', '#f0f0e0');
+  band(0.58, 1.05, '#5fd04a', '#2f8a2a');
+  sugarCoat(ctx, s, 23, 60);
+  finish(ctx, s, ST);
+}
+
+function chocolate(ctx: Ctx, s: number) {
+  // tableta de chocolate: 2×2 onzas con biseles
+  face(ctx, s, '#4a2410', { ...ST, rad: 0.1 });
+  const g = 0.05;
+  const q = (1 - g * 3) / 2;
+  for (const [i, j] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+    const x = g + i * (q + g);
+    const y = g + j * (q + g);
+    roundRect(ctx, x * s, y * s, q * s, q * s, s * 0.04);
+    ctx.fillStyle = vg(ctx, s, '#a8643a', '#5a2a10', y, y + q);
+    ctx.fill();
+    roundRect(ctx, (x + 0.06) * s, (y + 0.06) * s, (q - 0.12) * s, (q - 0.12) * s, s * 0.03);
+    ctx.fillStyle = vg(ctx, s, '#7a4220', '#8a4a24', y, y + q);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 220, 190, 0.35)';
+    ctx.fillRect((x + 0.04) * s, (y + 0.03) * s, (q - 0.08) * s, s * 0.02);
+  }
+  finish(ctx, s, { ...ST, rad: 0.1, shine: 0.12 });
 }
 
 const DRAW: Record<Kind, (ctx: Ctx, s: number) => void> = {
   lolly,
   wrapped,
-  bear,
-  gumdrop,
-  gem,
-  worm,
-  mint,
-  stone: sugar,
+  honey,
+  cane,
+  cushion,
+  jelly,
+  belt,
+  stone: chocolate,
 };
 
 const CONFETTI = ['#ff5fa2', '#2ed3c6', '#ffc23a', '#a66cff', '#6fdc5a', '#ffffff'];
@@ -293,12 +291,12 @@ const candy: SkinDef = {
   id: 'candy',
   name: { es: 'Candy', en: 'Candy' },
   description: {
-    es: 'Piruletas, caramelos y gominolas brillantes. Explotan en confeti de azúcar.',
-    en: 'Lollipops, sweets and shiny gummies. They burst into sugar confetti.',
+    es: 'Piruletas, caramelos, panal, gomitas, tiras ácidas y chocolate. Explotan en confeti de azúcar.',
+    en: 'Lollipops, hard candy, honeycomb, gummies, sour belts and chocolate. They burst into sugar confetti.',
   },
   price: 900,
   order: 5.2,
-  blocks: [C.lolly, C.wrapped, C.bear, C.gumdrop, C.gem, C.worm, C.mint, C.stone],
+  blocks: [C.lolly, C.wrapped, C.honey, C.cane, C.cushion, C.jelly, C.belt, C.stone],
   ui: {
     bg: '#ffd6ea',
     panel: 'rgba(255, 250, 253, 0.95)',

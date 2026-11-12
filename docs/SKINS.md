@@ -33,7 +33,7 @@ at the screen's resolution. The helpers in `src/skins/draw.ts` (`roundRect`, `sh
 `star`, `softDot`, `drawGemIcon`…) save you work.
 
 For "illustrated tile" skins, where every block IS an object filling the whole rounded square
-(Fast Food, Test Chamber, Space, Ocean, Candy, Fruits, Mate & BBQ, Casino), use `src/skins/tiles.ts`:
+(Fast Food, Test Chamber, Space, Ocean, Candy, Fruits, Casino), use `src/skins/tiles.ts`:
 `face()` opens the clipped square, you draw the object, `finish()` adds the border and shine.
 
 ## Tips

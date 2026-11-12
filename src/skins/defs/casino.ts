@@ -1,12 +1,11 @@
 import { roundRect, shade, star } from '../draw';
-import { cells, circ, face, finish, ghostTile, kinds, paint, poly, rg, rng, vg } from '../tiles';
+import { cells, circ, ell, face, finish, ghostTile, kinds, paint, poly, rg, rng, vg } from '../tiles';
 import type { Ctx, SkinDef } from '../types';
 
 /**
  * CASINO — mesa de paño verde con luces doradas. Cada bloque llena todo el cuadrado:
- *   rojo → dado · blanco → carta (as de picas) · dorado → 7 de la suerte
- *   azul → ficha azul · violeta → ficha violeta · naranja → campana de tragamonedas
- *   celeste → diamante · piedra → placa "BAR"
+ *   rojo → dado · blanco → as de picas · rosado → as de corazones (rojo) · dorado → 7 de la suerte
+ *   azul → ficha azul · violeta → ficha violeta · lila → comodín (joker) · piedra → placa "BAR"
  * Explota en monedas y destellos dorados.
  */
 
@@ -16,8 +15,8 @@ const C = {
   seven: '#f5c331',
   chipBlue: '#2f5fd8',
   chipViolet: '#8a3fd0',
-  bell: '#ff8a2a',
-  diamond: '#3fd0e0',
+  heart: '#f2e2e2',
+  joker: '#ece2f6',
   stone: '#4a4a52',
 };
 type Kind = keyof typeof C;
@@ -53,25 +52,89 @@ function spade(ctx: Ctx, s: number, x: number, y: number, k: number) {
   ctx.fill();
 }
 
-function card(ctx: Ctx, s: number) {
+function heartShape(ctx: Ctx, s: number, x: number, y: number, k: number) {
+  ctx.beginPath();
+  ctx.moveTo(x * s, (y + k * 0.95) * s);
+  ctx.bezierCurveTo((x - k * 1.45) * s, (y - k * 0.05) * s, (x - k * 0.7) * s, (y - k * 1.15) * s, x * s, (y - k * 0.45) * s);
+  ctx.bezierCurveTo((x + k * 0.7) * s, (y - k * 1.15) * s, (x + k * 1.45) * s, (y - k * 0.05) * s, x * s, (y + k * 0.95) * s);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** Carta de póker: fondo marfil, marco fino y el índice en dos esquinas. */
+function cardBase(ctx: Ctx, s: number, frame: string) {
   face(ctx, s, vg(ctx, s, '#ffffff', '#e8e2d2'), { ...ST, rad: 0.1 });
-  // marco interior
   roundRect(ctx, s * 0.12, s * 0.12, s * 0.76, s * 0.76, s * 0.06);
-  ctx.strokeStyle = 'rgba(180, 30, 40, 0.35)';
+  ctx.strokeStyle = frame;
   ctx.lineWidth = s * 0.015;
   ctx.stroke();
-  ctx.fillStyle = '#16161c';
-  spade(ctx, s, 0.5, 0.46, 0.26);
-  // "A" en las esquinas
-  ctx.font = `bold ${s * 0.2}px Georgia, serif`;
+}
+
+function corners(ctx: Ctx, s: number, label: string, color: string, size = 0.2) {
+  ctx.font = `bold ${s * size}px Georgia, serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('A', s * 0.2, s * 0.21);
+  ctx.fillStyle = color;
+  ctx.fillText(label, s * 0.2, s * 0.21);
   ctx.save();
   ctx.translate(s * 0.8, s * 0.79);
   ctx.rotate(Math.PI);
-  ctx.fillText('A', 0, 0);
+  ctx.fillText(label, 0, 0);
   ctx.restore();
+}
+
+function card(ctx: Ctx, s: number) {
+  cardBase(ctx, s, 'rgba(30, 30, 40, 0.3)');
+  ctx.fillStyle = '#16161c';
+  spade(ctx, s, 0.5, 0.46, 0.26);
+  corners(ctx, s, 'A', '#16161c');
+  finish(ctx, s, { ...ST, rad: 0.1, shine: 0.1 });
+}
+
+function heart(ctx: Ctx, s: number) {
+  cardBase(ctx, s, 'rgba(200, 30, 45, 0.35)');
+  ctx.fillStyle = vg(ctx, s, '#ff4a5a', '#b8101f', 0.25, 0.8);
+  heartShape(ctx, s, 0.5, 0.52, 0.27);
+  ell(ctx, s, 0.38, 0.4, 0.06, 0.03, -0.7);
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fill();
+  corners(ctx, s, 'A', '#d0182a');
+  finish(ctx, s, { ...ST, rad: 0.1, shine: 0.1 });
+}
+
+function joker(ctx: Ctx, s: number) {
+  cardBase(ctx, s, 'rgba(120, 50, 170, 0.4)');
+  // gorro de bufón de tres puntas
+  const tips: Array<[number, number, string, number, number]> = [
+    [0.14, 0.3, '#e8303f', 0.3, 0.42],
+    [0.86, 0.3, '#2fae6a', 0.7, 0.42],
+    [0.5, 0.14, '#8a3fd0', 0.5, 0.36],
+  ];
+  for (const [tx, ty, col, cx, cy] of tips) {
+    ctx.beginPath();
+    ctx.moveTo(s * (cx - 0.16), s * 0.64);
+    ctx.quadraticCurveTo(s * (cx - 0.1), s * cy, s * tx, s * ty);
+    ctx.quadraticCurveTo(s * (cx + 0.08), s * (cy + 0.04), s * (cx + 0.16), s * 0.64);
+    ctx.closePath();
+    paint(ctx, s, col, '#2a0a2a', 0.022);
+  }
+  for (const [tx, ty] of tips) {
+    circ(ctx, s, tx, ty, 0.055);
+    paint(ctx, s, rg(ctx, s, tx - 0.015, ty - 0.015, 0.06, [[0, '#fff6c0'], [1, '#c8900a']]), '#5a3a00', 0.016);
+  }
+  // banda con rombos
+  roundRect(ctx, s * 0.22, s * 0.6, s * 0.56, s * 0.12, s * 0.04);
+  paint(ctx, s, GOLD, '#5a3a00', 0.02);
+  ctx.fillStyle = '#e8303f';
+  for (const x of [0.32, 0.5, 0.68]) poly(ctx, s, [[x, 0.62], [x + 0.04, 0.66], [x, 0.7], [x - 0.04, 0.66]]), ctx.fill();
+  ctx.font = `900 ${s * 0.12}px Georgia, serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#8a3fd0';
+  ctx.fillText('JOKER', s * 0.5, s * 0.82);
+  ctx.fillStyle = '#e8303f';
+  star(ctx, s * 0.19, s * 0.2, s * 0.06, s * 0.025, 5);
+  ctx.fill();
   finish(ctx, s, { ...ST, rad: 0.1, shine: 0.1 });
 }
 
@@ -153,62 +216,6 @@ function chip(ctx: Ctx, s: number, col: string, value: string) {
 const chipBlue = (ctx: Ctx, s: number) => chip(ctx, s, C.chipBlue, '50');
 const chipViolet = (ctx: Ctx, s: number) => chip(ctx, s, C.chipViolet, '100');
 
-function bell(ctx: Ctx, s: number) {
-  face(ctx, s, vg(ctx, s, '#ffe4c0', '#ffb070'), ST);
-  // campana dorada-naranja grande
-  ctx.beginPath();
-  ctx.moveTo(s * 0.5, s * 0.08);
-  ctx.bezierCurveTo(s * 0.2, s * 0.1, s * 0.22, s * 0.5, s * 0.14, s * 0.7);
-  ctx.quadraticCurveTo(s * 0.02, s * 0.82, s * 0.1, s * 0.84);
-  ctx.lineTo(s * 0.9, s * 0.84);
-  ctx.quadraticCurveTo(s * 0.98, s * 0.82, s * 0.86, s * 0.7);
-  ctx.bezierCurveTo(s * 0.78, s * 0.5, s * 0.8, s * 0.1, s * 0.5, s * 0.08);
-  ctx.closePath();
-  paint(ctx, s, rg(ctx, s, 0.38, 0.32, 0.7, [[0, '#ffe6a0'], [0.5, '#ff9a2a'], [1, '#b8500a']]), '#5a2400', 0.03);
-  // badajo y aro
-  circ(ctx, s, 0.5, 0.88, 0.08);
-  paint(ctx, s, '#ffcc4a', '#5a2400', 0.025);
-  circ(ctx, s, 0.5, 0.07, 0.05);
-  paint(ctx, s, '#ffcc4a', '#5a2400', 0.02);
-  ctx.fillStyle = 'rgba(255,255,255,0.6)';
-  ctx.beginPath();
-  ctx.ellipse(s * 0.36, s * 0.38, s * 0.04, s * 0.14, 0.15, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = 'rgba(90, 36, 0, 0.35)';
-  ctx.fillRect(s * 0.16, s * 0.66, s * 0.68, s * 0.04);
-  finish(ctx, s, ST);
-}
-
-function diamond(ctx: Ctx, s: number) {
-  face(ctx, s, rg(ctx, s, 0.5, 0.5, 0.75, [[0, '#1a4a5a'], [1, '#0a1a24']]), ST);
-  // brillante talla clásica, enorme
-  const top = 0.18;
-  const mid = 0.38;
-  const bot = 0.94;
-  const facets: Array<[Array<[number, number]>, string]> = [
-    [[[0.28, top], [0.72, top], [0.62, mid], [0.38, mid]], '#c8faff'],
-    [[[0.28, top], [0.38, mid], [0.04, mid]], '#7ae8f4'],
-    [[[0.72, top], [0.96, mid], [0.62, mid]], '#5ad8e8'],
-    [[[0.04, mid], [0.38, mid], [0.5, bot]], '#3fd0e0'],
-    [[[0.38, mid], [0.62, mid], [0.5, bot]], '#a0f4ff'],
-    [[[0.62, mid], [0.96, mid], [0.5, bot]], '#1fa8c0'],
-  ];
-  for (const [pts, col] of facets) {
-    poly(ctx, s, pts);
-    paint(ctx, s, col, '#0a3a48', 0.016);
-  }
-  ctx.save();
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = '#ffffff';
-  ctx.shadowBlur = s * 0.1;
-  star(ctx, s * 0.36, s * 0.27, s * 0.09, s * 0.015, 4);
-  ctx.fill();
-  star(ctx, s * 0.8, s * 0.6, s * 0.06, s * 0.012, 4);
-  ctx.fill();
-  ctx.restore();
-  finish(ctx, s, ST);
-}
-
 function bar(ctx: Ctx, s: number) {
   face(ctx, s, vg(ctx, s, '#6a6a74', '#2a2a32'), { ...ST, rad: 0.1 });
   roundRect(ctx, s * 0.08, s * 0.32, s * 0.84, s * 0.36, s * 0.06);
@@ -227,8 +234,8 @@ const DRAW: Record<Kind, (ctx: Ctx, s: number) => void> = {
   seven,
   chipBlue,
   chipViolet,
-  bell,
-  diamond,
+  heart,
+  joker,
   stone: bar,
 };
 
@@ -255,12 +262,12 @@ const casino: SkinDef = {
   id: 'casino',
   name: { es: 'Casino', en: 'Casino' },
   description: {
-    es: 'Fichas, dados, cartas y el 7 de la suerte sobre paño verde. ¡Lluvia de monedas!',
-    en: 'Chips, dice, cards and lucky 7s on green felt. A shower of coins!',
+    es: 'Fichas, dados, ases, comodín y el 7 de la suerte sobre paño verde. ¡Lluvia de monedas!',
+    en: 'Chips, dice, aces, a joker and lucky 7s on green felt. A shower of coins!',
   },
   price: 1800,
   order: 5.6,
-  blocks: [C.dice, C.card, C.seven, C.chipBlue, C.chipViolet, C.bell, C.diamond, C.stone],
+  blocks: [C.dice, C.card, C.seven, C.chipBlue, C.chipViolet, C.heart, C.joker, C.stone],
   ui: {
     bg: '#0a3a24',
     panel: 'rgba(14, 50, 32, 0.95)',
@@ -274,7 +281,7 @@ const casino: SkinDef = {
     radius: 12,
     font: '"Georgia", "Palatino Linotype", serif',
     titleGlow: '0 0 14px rgba(245, 195, 49, 0.85), 0 2px 0 rgba(0,0,0,0.6)',
-    swatches: [C.dice, '#e8e2d2', C.seven, C.chipBlue, C.chipViolet, C.bell, C.diamond],
+    swatches: [C.dice, '#e8e2d2', C.seven, C.chipBlue, C.chipViolet, '#ff6a7a', '#b88aff'],
   },
   blockMargin: 0.08,
   flash: '#fff2b0',
@@ -387,7 +394,7 @@ const casino: SkinDef = {
 
   particles: {
     draw(ctx, s, color) {
-      if (kindOf(color) === 'diamond' || kindOf(color) === 'card') {
+      if (['card', 'heart', 'joker'].includes(kindOf(color))) {
         ctx.fillStyle = '#fff6c0';
         star(ctx, s / 2, s / 2, s * 0.5, s * 0.1, 4);
         ctx.fill();
