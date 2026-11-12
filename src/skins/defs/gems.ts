@@ -25,6 +25,7 @@ const gems: SkinDef = {
   },
   blockMargin: 0.15,
   flash: '#fff3c4',
+  explosion: { power: 1.3, rings: 2 },
 
   drawBackground(ctx, w, h) {
     const g = ctx.createRadialGradient(w / 2, h * 0.35, 0, w / 2, h * 0.35, Math.max(w, h) * 0.8);

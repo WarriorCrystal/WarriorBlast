@@ -24,6 +24,7 @@ const neon: SkinDef = {
   },
   blockMargin: 0.4,
   flash: '#bff4ff',
+  explosion: { power: 1.3, ring: '#ff3df2', rings: 2 },
 
   drawBackground(ctx, w, h) {
     ctx.fillStyle = '#07051a';

@@ -114,7 +114,7 @@ export class CascadeView {
   private holdBox = new Container();
   private nextBox = new Container();
   private labels: Text[] = [];
-  private particles = new Particles(260);
+  private particles = new Particles(500);
   private skin!: SkinDef;
   private tex?: SkinTextures;
   private wellTex?: Texture;
@@ -458,12 +458,16 @@ export class CascadeView {
       fl.blendMode = 'add';
       fl.position.set(px, py);
       fl.alpha = 0;
-      tw.to(fl, { alpha: 0.95 }, 60, { delay, onComplete: () => tw.to(fl, { alpha: 0, scale: 1.35 }, 240, { onComplete: () => (fl.visible = false) }) });
-      tw.to(s, { scale: 1.15 }, 80, {
+      const pw = this.skin.explosion?.power ?? 1;
+      fl.scale.set(1.5 * pw);
+      tw.to(fl, { alpha: 1 }, 60, { delay, onComplete: () => tw.to(fl, { alpha: 0, scale: 2.6 * pw }, 300, { onComplete: () => (fl.visible = false) }) });
+      tw.to(s, { scale: 1.35 }, 80, {
         delay,
         onComplete: () => {
-          this.particles.burst(L.wx + px, L.wy + py, Math.max(1, this.skin.particles.perCell - 1) + Math.min(3, Math.floor(intensity / 2)), tex.particle[c.color], this.skin.particles, cell, 1 + Math.min(0.6, intensity * 0.08));
-          tw.to(s, { scale: 0, alpha: 0 }, 200, { ease: ease.inCubic, onComplete: () => (s.visible = false) });
+          const n = Math.round((this.skin.particles.perCell * 1.5 + Math.min(5, Math.floor(intensity * 1.2))) * pw);
+          this.particles.burst(L.wx + px, L.wy + py, n, tex.particle[c.color], this.skin.particles, cell, (1.3 + Math.min(0.8, intensity * 0.1)) * Math.sqrt(pw));
+          this.particles.burst(L.wx + px, L.wy + py, Math.round(2 * pw), tex.particle[c.color], { ...this.skin.particles, blend: 'add', speed: [4, 8], life: [0.35, 0.6], size: [0.12, 0.26], gravity: this.skin.particles.gravity * 0.4, shrink: true }, cell, 1, 0.2);
+          tw.to(s, { scale: 0, alpha: 0 }, 220, { ease: ease.inCubic, onComplete: () => (s.visible = false) });
         },
       });
     }
@@ -483,7 +487,7 @@ export class CascadeView {
     audio.play('clear', { lines: e.lines, combo: e.combo });
     if (e.combo >= 2) tw.delay(110, () => audio.play('combo', { combo: e.combo }));
     haptics.vibrate(e.lines >= 4 || e.combo >= 3 ? [25, 40, 35] : 22);
-    if (e.lines >= 3 || e.perfect) this.shake(Math.min(14, 3 + intensity * 2.2));
+    if (e.lines >= 2 || e.perfect) this.shake(Math.min(20, (3 + intensity * 3) * (this.skin.explosion?.power ?? 1)));
 
     const midX = L.wx + (COLS * cell) / 2;
     const rowY = L.wy + (e.rows[e.rows.length - 1] - HIDDEN) * cell;

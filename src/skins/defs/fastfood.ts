@@ -647,6 +647,7 @@ const fastfood: SkinDef = {
   },
   blockMargin: 0.08,
   flash: '#fff3c4',
+  explosion: { power: 1.25, ring: '#ffb703' },
 
   drawBackground(ctx, w, h) {
     // mantel de cuadros rojos y blancos (vichy)

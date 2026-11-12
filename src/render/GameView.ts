@@ -53,7 +53,7 @@ function mix(a: string, b: string, k: number): string {
 export class GameView {
   readonly app: Application;
   readonly tweens = new Tweens();
-  private particles = new Particles();
+  private particles = new Particles(720);
   private ambient = new Ambient();
   private world = new Container();
   private bg = new Sprite();
@@ -627,6 +627,15 @@ export class GameView {
     const cell = this.L.cell;
     const flashColor = this.skin.flash;
     const intensity = r.lines + Math.max(0, r.combo - 1) * 0.8;
+    const ex = this.skin.explosion;
+    const pw = ex?.power ?? 1;
+    const ringColor = ex?.ring ?? flashColor;
+    const rings = ex?.rings ?? 1;
+    // onda expansiva desde donde se colocó la pieza
+    const origin = { x: ox * cell + cell / 2, y: oy * cell + cell / 2 };
+    for (let i = 0; i < rings + (intensity >= 3 ? 1 : 0); i++) {
+      this.tweens.delay(i * 90, () => this.shockwave(origin.x, origin.y, ringColor, 1 + Math.min(1.6, intensity * 0.25)));
+    }
     // ocultar bloques reales y sustituirlos por sprites de efecto
     r.cleared.forEach((c) => {
       const k = c.y * SIZE + c.x;
@@ -644,18 +653,23 @@ export class GameView {
       fl.blendMode = 'add';
       fl.position.set(p.x, p.y);
       fl.alpha = 0;
-      this.tweens.to(fl, { alpha: 0.95 }, 70, {
+      fl.scale.set(1.5 * pw);
+      this.tweens.to(fl, { alpha: 1 }, 60, {
         delay,
         ease: ease.outQuad,
-        onComplete: () => this.tweens.to(fl, { alpha: 0, scale: 1.35 }, 260, { ease: ease.outCubic, onComplete: () => this.releaseFx(fl) }),
+        onComplete: () => this.tweens.to(fl, { alpha: 0, scale: 2.6 * pw }, 320, { ease: ease.outCubic, onComplete: () => this.releaseFx(fl) }),
       });
-      this.tweens.to(s, { scale: 1.18 }, 90, {
+      this.tweens.to(s, { scale: 1.4 }, 90, {
         delay,
         ease: ease.outQuad,
         onComplete: () => {
           const g = this.cellCenter(c.x, c.y);
-          this.particles.burst(g.x, g.y, this.skin.particles.perCell + Math.min(4, Math.floor(intensity)), this.tex.particle[Math.min(c.color, 8)], this.skin.particles, cell, 1 + Math.min(0.8, intensity * 0.08));
-          this.tweens.to(s, { scale: 0, alpha: 0, rotation: (Math.random() - 0.5) * 0.8 }, 240, { ease: ease.inCubic, onComplete: () => this.releaseFx(s) });
+          const tx = this.tex.particle[Math.min(c.color, 8)];
+          const n = Math.round((this.skin.particles.perCell * 1.6 + Math.min(6, Math.floor(intensity * 1.5))) * pw);
+          this.particles.burst(g.x, g.y, n, tx, this.skin.particles, cell, (1.35 + Math.min(1, intensity * 0.1)) * Math.sqrt(pw));
+          // chispas rápidas y brillantes que salen disparadas
+          this.particles.burst(g.x, g.y, Math.round((2 + Math.min(3, intensity)) * pw), tx, { ...this.skin.particles, blend: 'add', speed: [4, 8], life: [0.35, 0.6], size: [0.12, 0.26], gravity: this.skin.particles.gravity * 0.4, shrink: true }, cell, 1, 0.2);
+          this.tweens.to(s, { scale: 0, alpha: 0, rotation: (Math.random() - 0.5) * 1.2 }, 260, { ease: ease.inCubic, onComplete: () => this.releaseFx(s) });
         },
       });
       if (c.mark === MARK_GEM) this.flyGem(p.x, p.y, delay);
@@ -671,10 +685,10 @@ export class GameView {
       const pos = idx * cell + cell / 2;
       s.position.set(horizontal ? this.L.size / 2 : pos, horizontal ? pos : this.L.size / 2);
       s.rotation = horizontal ? 0 : Math.PI / 2;
-      s.scale.set((len / 64) * 0.2, (cell * 0.9) / 32);
+      s.scale.set((len / 64) * 0.2, (cell * 1.2) / 32);
       s.alpha = 1;
-      this.tweens.to(s, { scaleX: len / 64 }, 160, { ease: ease.outCubic });
-      this.tweens.to(s, { scaleY: (cell * 2.4) / 32, alpha: 0 }, 420, { delay: 120, ease: ease.outQuad, onComplete: () => this.releaseFx(s) });
+      this.tweens.to(s, { scaleX: len / 64 }, 140, { ease: ease.outCubic });
+      this.tweens.to(s, { scaleY: (cell * 3.4 * Math.sqrt(pw)) / 32, alpha: 0 }, 480, { delay: 110, ease: ease.outQuad, onComplete: () => this.releaseFx(s) });
     };
     r.rows.forEach((y) => beam(true, y));
     r.cols.forEach((x) => beam(false, x));
@@ -683,7 +697,8 @@ export class GameView {
     if (r.combo >= 2) this.tweens.delay(110, () => audio.play('combo', { combo: r.combo }));
     if (r.gems > 0) this.tweens.delay(200, () => audio.play('gem'));
     haptics.vibrate(r.lines >= 3 || r.combo >= 3 ? [25, 40, 35] : 22);
-    if (intensity >= 2 || r.perfect) this.shake(Math.min(16, 3 + intensity * 2.4), 260 + intensity * 40);
+    if (intensity >= 1 || r.perfect) this.shake(Math.min(22, (3 + intensity * 3) * pw), 280 + intensity * 50);
+    if ((ex?.screenFlash ?? true) && (intensity >= 2 || r.perfect)) this.screenFlash(ringColor, Math.min(0.55, 0.18 + intensity * 0.06));
     if (r.perfect) this.perfectFx();
     this.tweens.delay(450, () => this.updateTrayFit());
   }
@@ -709,6 +724,30 @@ export class GameView {
     s.position.set(x, y);
     s.scale.set(0.2);
     this.tweens.to(s, { scale: (this.L.cell * 1.8) / 64, alpha: 0 }, 450, { ease: ease.outCubic, onComplete: () => this.releaseFx(s) });
+  }
+
+  /** Onda expansiva: anillo grande que se abre desde (x, y). */
+  private shockwave(x: number, y: number, color: string, power: number) {
+    const s = this.getFx();
+    s.texture = this.tex.ring;
+    s.tint = color;
+    s.blendMode = 'add';
+    s.position.set(x, y);
+    s.scale.set(0.15);
+    s.alpha = 0.9;
+    this.tweens.to(s, { scale: (this.L.cell * 5.5 * power) / 64, alpha: 0 }, 520, { ease: ease.outCubic, onComplete: () => this.releaseFx(s) });
+  }
+
+  /** Destello de todo el tablero (limpiezas grandes y combos). */
+  private screenFlash(color: string, alpha: number) {
+    const s = this.getFx();
+    s.texture = this.tex.flash;
+    s.tint = color;
+    s.blendMode = 'add';
+    s.position.set(this.L.size / 2, this.L.size / 2);
+    s.scale.set((this.L.size * 1.25) / this.L.cell);
+    s.alpha = alpha;
+    this.tweens.to(s, { alpha: 0 }, 380, { ease: ease.outQuad, onComplete: () => this.releaseFx(s) });
   }
 
   private perfectFx() {

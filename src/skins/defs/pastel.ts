@@ -24,6 +24,7 @@ const pastel: SkinDef = {
   },
   blockMargin: 0.15,
   flash: '#ffffff',
+  explosion: { power: 0.9, ring: '#ffb3d9' },
 
   drawBackground(ctx, w, h) {
     ctx.fillStyle = '#fbf1e6';

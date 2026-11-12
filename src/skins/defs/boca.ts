@@ -585,6 +585,7 @@ const boca: SkinDef = {
   },
   blockMargin: 0.08,
   flash: '#fff3b0',
+  explosion: { power: 1.35, ring: '#f5c400', rings: 2 },
 
   drawBackground(ctx, w, h) {
     // azul profundo con la franja de oro atravesando la pantalla

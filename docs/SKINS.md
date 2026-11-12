@@ -21,6 +21,7 @@ so you don't need to touch the game logic, the shop or the renderer.
 | `blockMargin` | Extra space around the block for glows (fraction of a cell) |
 | `drawGem` / `drawTarget` | (Optional) gem and target icons drawn on top of a block |
 | `particles` | Particle drawing + count, size, speed, gravity, lifetime, blend (`add`/`normal`) |
+| `explosion` | (Optional) Clear explosion tuning: `power` (particles, flash and shake multiplier, 1 = normal), `ring` (shockwave color), `rings` (shockwaves per clear), `screenFlash` (full-board flash on big clears) |
 | `ambient` | (Optional) floating background particles |
 | `flash` | Flash color when lines clear |
 | `frosted` | The board shows the blurred background behind it (glass effect) |

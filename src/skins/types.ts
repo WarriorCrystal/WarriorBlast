@@ -99,6 +99,18 @@ export interface SkinSound {
   music: SkinMusic;
 }
 
+/** Carácter de la explosión al limpiar líneas. Todo opcional: sin definir = valores por defecto. */
+export interface SkinExplosion {
+  /** Multiplicador de partículas, destello y temblor (1 = normal). */
+  power?: number;
+  /** Color de los anillos de onda expansiva (por defecto, `flash`). */
+  ring?: string;
+  /** Anillos de onda por limpieza (por defecto 1; 0 = sin anillos). */
+  rings?: number;
+  /** Destello de pantalla completa en limpiezas grandes (por defecto true). */
+  screenFlash?: boolean;
+}
+
 export interface SkinDef {
   id: string;
   name: Record<Lang, string>;
@@ -129,6 +141,8 @@ export interface SkinDef {
   /** Marca de bloque objetivo encima del bloque (s×s). */
   drawTarget?(ctx: Ctx, s: number): void;
   particles: SkinParticles;
+  /** (Opcional) Ajustes de la explosión: potencia, anillos y destello de pantalla. */
+  explosion?: SkinExplosion;
   ambient?: SkinAmbient;
   sound: SkinSound;
 }
